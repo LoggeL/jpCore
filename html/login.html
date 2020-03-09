@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jupeters Login</title>
+    <link rel="stylesheet" href="w3.min.css">
+    <link rel="stylesheet" href="login.css">
+</head>
+
+<body>
+    <div class="login-container">
+        <div class="container card-4 round-xlarge">
+            <h1 class="center">Jupeters Login</h1>
+            <img class="center" src="JP.svg">
+            <div class="panel border-bottom">
+                <p class="border-bottom">
+                    Hiermit erlaubst du <b id="serviceText"></b> die folgenden Dinge:
+                </p>
+                <ul id="permissions">
+                    <li>Diese App benötigt keine zusätzlichen Rechte</li>
+                </ul>
+            </div>
+
+            <form class="panel">
+                <p>
+                    <label for="usernameField">Nutzername</label>
+                    <input class="input" type="email" placeholder="Nutzername" id="usernameField">
+                </p>
+                <p>
+                    <label for="passwordField">Passwort</label>
+                    <input class="input" type="password" placeholder="Passwort" id="passwordField">
+                </p>
+                <p>
+                    <input class="btn blue" type="" value="Bestätigen" id="submit">
+                </p>
+            </form>
+        </div>
+    </div>
+    <div class="bg bg1"></div>
+    <div class="bg bg2"></div>
+
+    <script src="login.js"></script>
+</body>
+
+</html>
