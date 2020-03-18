@@ -23,7 +23,7 @@
                 </ul>
             </div>
 
-            <form class="panel">
+            <form class="panel" id="loginForm">
                 <p>
                     <label for="usernameField">Nutzername</label>
                     <input class="input" type="email" placeholder="Nutzername" id="usernameField">
@@ -33,8 +33,13 @@
                     <input class="input" type="password" placeholder="Passwort" id="passwordField">
                 </p>
                 <p>
-                    <input class="btn blue" type="" value="Bestätigen" id="submit">
+                    <a class="btn blue" id="submit">Bestätigen</a>
+                    <span id="responseStatus" class="margin-left text-red"></span>
                 </p>
+            </form>
+            <form class="panel hide" id="acceptForm">
+                <a class="btn blue" id="accept">Bestätigen</a>
+                <span id="acceptName" class="margin-left"></span>
             </form>
         </div>
     </div>

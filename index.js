@@ -85,24 +85,19 @@ app.post('/api/login', (req, res) => {
 
         if (row.hash != hash) return res.status(403).json({ error: "Falsche Zugangsdaten" })
         const token = jwt.sign({ email: email, role: roles, name: row.name }, jwtSecret)
-        res.send(token)
+        res.send({ success: token })
       })
   })
 })
 
 // API Routes
-app.get('/api/test', (req, res) => {
-  const token = req.query.token
+app.post('/api/test', (req, res) => {
+  const token = req.body.token
   jwt.verify(token, jwtSecret, function (err, decoded) {
     if (!err) {
-      const secrets = {
-        accountNumber: '938291239',
-        pin: '11289',
-        account: 'Finance',
-      }
-      res.status(200).json(secrets)
+      res.status(200).json({ success: 'Valid token' })
     } else {
-      res.status(403).send(err)
+      res.status(403).send({ error: 'Invalid token' })
     }
   })
 })
