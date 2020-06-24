@@ -1,5 +1,6 @@
 // Load in our dependencies
 const express = require('express')
+const cors = require('cors')
 const bodyParser = require('body-parser')
 const sqlite3 = require('sqlite3').verbose()
 
@@ -19,10 +20,11 @@ const jwtSecret = 'temp-secret'
 
 // Configure Express
 app.use(express.static(path.join(__dirname, 'html')));
+app.use(cors())
 app.use(bodyParser.json());       // to support JSON-encoded bodies
 app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
   extended: true
-}));
+}))
 
 // Home Route
 app.get('/', function (req, res) {
@@ -41,8 +43,8 @@ app.get('/api/register', (req, res) => {
     (err, key) => {
       const hash = key.toString('base64')
       db.run(
-        'INSERT INTO `Users` (email, salt, hash, role, regDate)  VALUES (?, ?, ?, NULL, ?);',
-        [req.query.email, salt, hash, Date.now()], (error) => {
+        'INSERT INTO `Users` (email, salt, hash, role, regDate, name, verifiedMail)  VALUES (?, ?, ?, NULL, ?, ?, 0);',
+        [req.query.email, salt, hash, Date.now(), req.query.name], (error) => {
           if (error) console.error(error)
         })
       console.log('Done')
@@ -66,6 +68,8 @@ app.post('/api/login', (req, res) => {
 
   db.get('SELECT hash, salt, role, name FROM Users WHERE email = ?', [email], (error, row) => {
     if (error) return console.error(error)
+
+    if (!row) return res.status(403).json({ error: "Falsche Zugangsdaten" })
 
     crypto.pbkdf2(
       password,
@@ -92,7 +96,7 @@ app.post('/api/login', (req, res) => {
 
 // API Routes
 app.post('/api/test', (req, res) => {
-  const token = req.body.token
+  const token = req.headers.authorization
   jwt.verify(token, jwtSecret, function (err, decoded) {
     if (!err) {
       res.status(200).json({ success: 'Valid token' })

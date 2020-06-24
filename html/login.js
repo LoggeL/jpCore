@@ -15,7 +15,7 @@ const hostname = getLocation(service).hostname
 document.getElementById('serviceText').innerText = hostname
 if (!service) {
     alert("Dienst nicht richtig konfiguriert (service parameter missing)")
-    window.location = document.referrer
+    //window.location = document.referrer
 }
 
 let token
@@ -36,7 +36,7 @@ else {
     const tokenObj = tokens.find(e => e.hostname === hostname && JSON.stringify(e.permissions) == JSON.stringify(perms))
     if (tokenObj) {
         // Already authed
-        fetch('http://localhost:3000/api/test', {
+        fetch('api/test', {
             method: "post",
             headers: {
                 'Accept': 'application/json',
@@ -97,7 +97,7 @@ document.getElementById('submit').onclick = () => {
 
     console.log(window.location.host + '/api/login')
 
-    fetch('http://localhost:3000/api/login', {
+    fetch('api/login', {
         method: "post",
         headers: {
             'Accept': 'application/json',
@@ -145,5 +145,5 @@ document.getElementById('submit').onclick = () => {
 }
 
 function redirect(tkn) {
-    window.location.href = service + '#' + tkn
+    window.location.href = 'http://' + service + '#' + tkn
 }
