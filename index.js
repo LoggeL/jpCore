@@ -95,16 +95,28 @@ app.post('/api/login', (req, res) => {
 })
 
 // API Routes
-app.post('/api/test', (req, res) => {
+app.get('/api/private/test', (req, res) => {
+  res.status(200).json({ success: 'Valid token' })
+})
+
+app.get('/api/public/test', (req, res) => {
+  res.status(200).json({ success: 'Systems operational' })
+})
+
+// Auth Handler
+app.use('/api/private', (req, res, next) => {
   const token = req.headers.authorization
   jwt.verify(token, jwtSecret, function (err, decoded) {
     if (!err) {
-      res.status(200).json({ success: 'Valid token' })
+      next()
     } else {
       res.status(403).send({ error: 'Invalid token' })
     }
   })
 })
+
+// Other routes
+require('./routes')(app, db);
 
 // Launch our app on port 3000
 app.listen('3000', () => console.log('Server listening on port 3000'))
