@@ -2,9 +2,10 @@
 const express = require('express')
 const cors = require('cors')
 const bodyParser = require('body-parser')
-const sqlite3 = require('sqlite3').verbose()
+const PouchDB = require('pouchdb');
+PouchDB.plugin(require('pouchdb-find'));
 
-const db = new sqlite3.Database('dev.sqlite')
+const db = new PouchDB('db/Users');
 const cryptoSettings = require('./crypto.json')
 
 const path = require('path')
@@ -16,7 +17,7 @@ const crypto = require('crypto')
 const jwt = require('jsonwebtoken')
 
 const app = express()
-const jwtSecret = 'temp-secret'
+const jwtSecret = cryptoSettings.secret
 
 // Configure Express
 app.use(express.static(path.join(__dirname, 'html')));
@@ -28,26 +29,46 @@ app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
 
 // Home Route
 app.get('/', function (req, res) {
-  res.send('API operational')
+  res.status(200).send('API operational')
 })
 
 // Register Route
-app.get('/api/register', (req, res) => {
+app.post('/api/register', async (req, res) => {
+
+  const email = req.body.email
+  if (!email) res.status(400).send({ error: 'Keine Mail angegeben' })
+
+  const password = req.body.password
+  if (!password) res.status(400).send({ error: 'Kein Passwort angegeben' })
+
+  const name = req.body.name
+  if (!name) res.status(400).send({ error: 'Kein Name angegeben' })
+
+  const exists = await db.find({ selector: { email } })
+  if (exists.docs.length > 0) return res.status(400).send({ error: 'Nutzer existiert bereits' })
+
   const salt = crypto.randomBytes(128).toString('base64')
   crypto.pbkdf2(
-    req.query.password,
+    password,
     salt,
     cryptoSettings.iterations,
     cryptoSettings.hashBytes,
     cryptoSettings.digest,
     (err, key) => {
       const hash = key.toString('base64')
-      db.run(
-        'INSERT INTO `Users` (email, salt, hash, role, regDate, name, verifiedMail)  VALUES (?, ?, ?, NULL, ?, ?, 0);',
-        [req.query.email, salt, hash, Date.now(), req.query.name], (error) => {
-          if (error) console.error(error)
-        })
-      console.log('Done')
+      const result = db.post({
+        email: email,
+        name: name,
+        salt: salt,
+        hash: hash,
+        roles: ['admin'],
+        date: Date.now(),
+        verifiedMail: false
+      }).then(() => {
+        return res.status(200).json({ success: 'Nutzer erstellt' })
+      }).catch(error => {
+        return res.status(500).json({ error })
+      })
     }
   )
 })
@@ -62,14 +83,14 @@ app.post('/api/login', (req, res) => {
   const email = req.body.email
   const password = req.body.password
 
-  if (!email) res.status(403).send('No Username present')
-  if (!password) res.status(403).send('No Password present')
+  if (!email) res.status(403).json({ error: 'No Username present' })
+  if (!password) res.status(403).json({ error: 'No Password present' })
 
+  db.find({ selector: { email: email }, fields: ['email', 'hash', 'salt', 'roles', 'name', '_id'] }).then(function (result) {
 
-  db.get('SELECT hash, salt, role, name FROM Users WHERE email = ?', [email], (error, row) => {
-    if (error) return console.error(error)
+    const row = result.docs[0]
 
-    if (!row) return res.status(403).json({ error: "Falsche Zugangsdaten" })
+    if (!row) return res.status(403).json({ error: 'Falsche Zugangsdaten' })
 
     crypto.pbkdf2(
       password,
@@ -82,17 +103,19 @@ app.post('/api/login', (req, res) => {
 
         const hash = key.toString('base64')
 
-        let roles = []
-        if (row.role) {
-          roles = JSON.parse(row.role)
-        }
+        let roles = row.roles
 
-        if (row.hash != hash) return res.status(403).json({ error: "Falsche Zugangsdaten" })
-        const token = jwt.sign({ email: email, role: roles, name: row.name }, jwtSecret)
-        res.send({ success: token })
+        if (row.hash != hash) return res.status(403).json({ error: 'Falsche Zugangsdaten' })
+        const token = jwt.sign({ _id: row._id, email: email, roles: roles, name: row.name }, jwtSecret)
+        res.status(200).json({ success: token })
       })
-  })
+
+  }).catch(function (error) {
+    console.log(error)
+    return res.status(500).json({ error })
+  });
 })
+
 
 // API Routes
 app.get('/api/private/test', (req, res) => {
@@ -110,7 +133,26 @@ app.use('/api/private', (req, res, next) => {
     if (!err) {
       next()
     } else {
-      res.status(403).send({ error: 'Invalid token' })
+      return res.status(403).json({ error: 'Invalid token' })
+    }
+  })
+})
+
+// Admin Handler
+app.use('/api/admin', (req, res, next) => {
+  const token = req.headers.authorization
+  jwt.verify(token, jwtSecret, function (err, decoded) {
+    if (!err) {
+      try {
+        const payload = JSON.parse(new Buffer.from((token.split('.')[1]), 'base64').toString('ascii'))
+        if (!payload.roles.includes('admin')) return res.status(403).json({ error: 'Missing permissions' });
+        next()
+      } catch (error) {
+        return res.status(400).json({ text: 'Malformed JWT payload', error });
+      }
+
+    } else {
+      return res.status(403).json({ error: 'Invalid token' })
     }
   })
 })
