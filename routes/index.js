@@ -16,14 +16,15 @@ module.exports = (app, userDB) => {
                 const volunteers = poolpartyVolunteers.allDocs({ include_docs: true })
                 const users = userDB.allDocs({ include_docs: true })
                 Promise.all([anmeldungen, items, volunteers, users]).then(([anmeldungen, items, volunteers, users]) => {
-                    res.status(200).json(
+                    console.log(items.rows)
+                    return res.status(200).json(
                         {
                             success: 'Operation successful',
                             data: {
                                 anmeldungen: anmeldungen.rows.map(e => e.doc),
                                 items: items.rows.map(e => e.doc),
                                 volunteers: volunteers.rows.map(e => e.doc),
-                                users: users.rows.map(e => e.doc).map(e => ({ email: e.email, name: e.name, roles: e.roles, date: e.date, verifiedMail: e.verifiedMail }))
+                                users: users.rows.map(e => e.doc).map(e => ({ _id: e._id, email: e.email, name: e.name, roles: e.roles, date: e.date, verifiedMail: e.verifiedMail }))
                             }
                         })
                 }).catch(error => res.status(500).json({ error }))
@@ -39,7 +40,12 @@ module.exports = (app, userDB) => {
         switch (req.params.method) {
             case "setzeItem":
                 const name = req.body.name
-                if (!name) res.send(400).json({ error: "Missing Name" })
+                if (!name) return res.status(400).json({ error: "Missing Name" })
+                console.log({
+                    name,
+                    userID: null,
+                    date: Date.now()
+                })
                 poolpartyItems.post({
                     name,
                     userID: null,
@@ -48,6 +54,37 @@ module.exports = (app, userDB) => {
                     res.status(200).json({ success: "Inserted " + name })
                 ).catch((error) =>
                     res.status(503).json({ text: "Error inserting into databse", error })
+                )
+                break
+            case "removeElement":
+                const _id = req.body._id
+                if (!_id) return res.status(400).json({ error: "Missing ID" })
+
+                const _rev = req.body._rev
+                if (!_rev) return res.status(400).json({ error: "Missing Revision" })
+
+                const element = req.body.element
+                if (!element) return res.status(400).json({ error: "Missing Element" })
+
+                let db
+                switch (element) {
+                    case "anmeldung":
+                        db = poolpartyAnmeldungen
+                        break
+                    case "item":
+                        db = poolpartyItems
+                        break
+                    case "volunteer":
+                        db = poolpartyVolunteers
+                        break
+                    default:
+                        console.log(element)
+                        return res.status(404).json({ error: "Unbekannte Methode" })
+                }
+                db.remove({ _id, _rev }).then(() =>
+                    res.status(200).json({ success: "Removed Item" })
+                ).catch((error) =>
+                    res.status(503).json({ text: "Error removing from databse", error })
                 )
                 break
             default:
@@ -63,8 +100,9 @@ module.exports = (app, userDB) => {
                     selector: { userID: null },
                     fields: ['name', '_id']
                 }).then(itemDocs => {
+                    const items = itemDocs.docs.map(e => ({ name: e.name, _id: e._id, _rev: e._rev }))
                     // ToDo format data
-                    res.status(200).json({ success: 'Operation successful', data: itemDocs })
+                    res.status(200).json({ success: 'Operation successful', data: items })
                 }).catch(error => res.status(500).json({ error }))
                 break
             default:
@@ -72,24 +110,29 @@ module.exports = (app, userDB) => {
         }
     });
 
-    // USER POST  
+    // USER POST
+    let userID
     app.post('/api/private/poolparty/:method', function (req, res) {
         switch (req.params.method) {
             case "setzeAnmeldung":
+                userID = null
                 userID = req.body.userID
-                if (!userID) res.send(400).json({ error: "Keine UserID angegeben" })
+                console.log(req.body)
+                if (!userID) return res.status(400).json({ error: "Keine UserID angegeben" })
 
                 const personen = req.body.personen
-                if (!personen) res.send(400).json({ error: "Keine Personenzahl angegeben" })
+                if (!personen) return res.status(400).json({ error: "Keine Personenzahl angegeben" })
 
                 const itemID = req.body.itemID
-                if (!itemID) res.send(400).json({ error: "Keine ItemID angegeben" })
+                if (!itemID) return res.status(400).json({ error: "Keine ItemID angegeben" })
 
                 poolpartyItems.get(itemID).then(doc => {
                     const item = poolpartyItems.put({
                         _id: itemID,
                         _rev: doc._rev,
-                        userID
+                        userID,
+                        name: doc.name,
+                        date: Date.now()
                     })
                     const anmeldung = poolpartyAnmeldungen.post({
                         userID, itemID, personen, date: Date.now()
@@ -106,14 +149,15 @@ module.exports = (app, userDB) => {
                 )
                 break
             case "setzeVolunteer":
-                const userID = req.body.userID
-                if (!userID) res.send(400).json({ error: "Keine UserID angegeben" })
+                userID = null
+                userID = req.body.userID
+                if (!userID) return res.status(400).json({ error: "Keine UserID angegeben" })
 
-                const duration = req.body.duration
-                if (!duration) res.send(400).json({ error: "Keine Dauer angegeben" })
+                const dauer = req.body.dauer
+                if (!dauer) return res.status(400).json({ error: "Keine Dauer angegeben" })
 
                 poolpartyVolunteers.post({
-                    userID, duration, date: Date.now()
+                    userID, dauer, date: Date.now()
                 })
                     .then(() =>
                         res.status(200).json({ success: "Erfolgreich angemeldet" })
