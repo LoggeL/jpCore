@@ -1,9 +1,9 @@
 const PouchDB = require('pouchdb');
 PouchDB.plugin(require('pouchdb-find'));
 
-const poolpartyAnmeldungen = new PouchDB('../db/Poolparty/Anmeldungen')
-const poolpartyItems = new PouchDB('../db/Poolparty/Items')
-const poolpartyVolunteers = new PouchDB('../db/Poolparty/Volunteers')
+const poolpartyAnmeldungen = new PouchDB('db/Poolparty/Anmeldungen')
+const poolpartyItems = new PouchDB('db/Poolparty/Items')
+const poolpartyVolunteers = new PouchDB('db/Poolparty/Volunteers')
 
 module.exports = (app, userDB) => {
 
@@ -16,7 +16,6 @@ module.exports = (app, userDB) => {
                 const volunteers = poolpartyVolunteers.allDocs({ include_docs: true })
                 const users = userDB.allDocs({ include_docs: true })
                 Promise.all([anmeldungen, items, volunteers, users]).then(([anmeldungen, items, volunteers, users]) => {
-                    console.log(items.rows)
                     return res.status(200).json(
                         {
                             success: 'Operation successful',
@@ -27,8 +26,7 @@ module.exports = (app, userDB) => {
                                 users: users.rows.map(e => e.doc).map(e => ({ _id: e._id, email: e.email, name: e.name, roles: e.roles, date: e.date, verifiedMail: e.verifiedMail }))
                             }
                         })
-                    //}).catch(error => res.status(500).json({ error, text: "Error resolving promises" }))
-                }).catch(error => console.error)
+                }).catch(error => res.status(500).json({ error, text: "Error resolving promises" }))
 
                 break
             default:
@@ -102,8 +100,7 @@ module.exports = (app, userDB) => {
                     fields: ['name', '_id']
                 }).then(itemDocs => {
                     const items = itemDocs.docs.map(e => ({ name: e.name, _id: e._id, _rev: e._rev }))
-                    // ToDo format data
-                    res.status(200).json({ success: 'Operation successful', data: items })
+                    return res.status(200).json({ success: 'Operation successful', data: items })
                 }).catch(error => res.status(500).json({ error, text: "Error loadding Items" }))
                 break
             default:
