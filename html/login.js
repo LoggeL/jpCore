@@ -11,7 +11,7 @@ const permissionMap = {
 }
 
 const service = urlParams.get('service')
-const hostname = getLocation(service).hostname
+const hostname = new URL("https://" + service).hostname
 document.getElementById('serviceText').innerText = hostname
 if (!service) {
     alert("Dienst nicht richtig konfiguriert (service parameter missing)")
