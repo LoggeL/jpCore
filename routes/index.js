@@ -27,7 +27,7 @@ module.exports = (app, userDB) => {
                                 users: users.rows.map(e => e.doc).map(e => ({ _id: e._id, email: e.email, name: e.name, roles: e.roles, date: e.date, verifiedMail: e.verifiedMail }))
                             }
                         })
-                }).catch(error => res.status(500).json({ error }))
+                }).catch(error => res.status(500).json({ error, text: "Error resolving promises" }))
 
                 break
             default:
@@ -103,7 +103,7 @@ module.exports = (app, userDB) => {
                     const items = itemDocs.docs.map(e => ({ name: e.name, _id: e._id, _rev: e._rev }))
                     // ToDo format data
                     res.status(200).json({ success: 'Operation successful', data: items })
-                }).catch(error => res.status(500).json({ error }))
+                }).catch(error => res.status(500).json({ error, text: "Error loadding Items" }))
                 break
             default:
                 res.status(404).json({ error: "Not found" })
