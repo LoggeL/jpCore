@@ -27,7 +27,8 @@ module.exports = (app, userDB) => {
                                 users: users.rows.map(e => e.doc).map(e => ({ _id: e._id, email: e.email, name: e.name, roles: e.roles, date: e.date, verifiedMail: e.verifiedMail }))
                             }
                         })
-                }).catch(error => res.status(500).json({ error, text: "Error resolving promises" }))
+                    //}).catch(error => res.status(500).json({ error, text: "Error resolving promises" }))
+                }).catch(error => console.error)
 
                 break
             default:
