@@ -47,6 +47,8 @@ app.post('/api/register', async (req, res) => {
   const exists = await db.find({ selector: { email } })
   if (exists.docs.length > 0) return res.status(400).send({ error: 'Nutzer existiert bereits' })
 
+  const role = req.body.role
+
   const salt = crypto.randomBytes(128).toString('base64')
   crypto.pbkdf2(
     password,
@@ -61,7 +63,7 @@ app.post('/api/register', async (req, res) => {
         name: name,
         salt: salt,
         hash: hash,
-        roles: ['admin'],
+        roles: role ? [role] : [],
         date: Date.now(),
         verifiedMail: false
       }).then(() => {
