@@ -1,5 +1,8 @@
 # db 
-db
+db/Users/*
+db/Poolparty/Items/*
+db/Poolparty/Volunteers/*
+db/Poolparty/Anmeldungen/*
 
 # Logs
 logs

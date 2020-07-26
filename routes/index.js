@@ -103,6 +103,33 @@ module.exports = (app, userDB) => {
                     return res.status(200).json({ success: 'Operation successful', data: items })
                 }).catch(error => res.status(500).json({ error, text: "Error loadding Items" }))
                 break
+
+            case "ladeNutzer":
+                const userID = req.jwt._id
+                const items = poolpartyItems.find({
+                    selector: { userID: userID },
+                    fields: ['name', '_id', 'date', '_rev']
+                })
+                const anmeldung = poolpartyAnmeldungen.find({
+                    selector: { userID: userID },
+                    fields: ['personen', '_id', 'date', '_rev']
+                })
+                const volunteer = poolpartyVolunteers.find({
+                    selector: { userID: userID },
+                    fields: ['dauer', '_id', 'date', '_rev']
+                })
+                Promise.all([items, anmeldung, volunteer]).then(([item, anmeldung, volunteer]) => {
+                    return res.status(200).json(
+                        {
+                            success: 'Operation successful',
+                            data: {
+                                anmeldung: anmeldung.docs,
+                                item: item.docs,
+                                volunteer: volunteer.docs,
+                            }
+                        })
+                }).catch(error => res.status(500).json({ error, text: "Error loadding Data from Database" }))
+                break
             default:
                 res.status(404).json({ error: "Not found" })
         }
@@ -164,6 +191,55 @@ module.exports = (app, userDB) => {
                         res.status(503).json({ error, text: "Error inserting into databse" })
                     )
                 break
+            case "volunteerAbmelden":
+                const volunteerID = req.body.volunteerID
+                if (!volunteerID) return res.status(400).json({ error: "Missing ID" })
+
+                const volunteerRev = req.body.volunteerRev
+                if (!volunteerRev) return res.status(400).json({ error: "Missing Revision" })
+
+                poolpartyVolunteers.remove({ _id: volunteerID, _rev: volunteerRev }).then(() =>
+                    res.status(200).json({ success: "Erfolgreich abgemeldet" })
+                )
+                    .catch(error =>
+                        res.status(503).json({ error, text: "Error deleting from databse" })
+                    )
+                break
+
+            case "anmeldungAbmelden":
+                const anmeldungID = req.body.anmeldungID
+                if (!anmeldungID) return res.status(400).json({ error: "Missing ID" })
+
+                const anmeldungRev = req.body.anmeldungRev
+                if (!anmeldungRev) return res.status(400).json({ error: "Missing Revision" })
+
+                const itemID2 = req.body.itemID
+                if (!itemID2) return res.status(400).json({ error: "Missing itemID" })
+
+                const itemRev = req.body.itemRev
+                if (!itemRev) return res.status(400).json({ error: "Missing itemRev" })
+
+                const itemName = req.body.itemName
+                if (!itemName) return res.status(400).json({ error: "Missing itemName" })
+
+                const item = poolpartyItems.put({
+                    _id: itemID2,
+                    _rev: itemRev,
+                    userID: null,
+                    name: itemName,
+                    date: Date.now()
+                })
+
+                const anmeldung = poolpartyAnmeldungen.remove({ _id: anmeldungID, _rev: anmeldungRev })
+
+                Promise.all(item, anmeldung).then(() =>
+                    res.status(200).json({ success: "Erfolgreich abgemeldet" })
+                )
+                    .catch(error =>
+                        res.status(503).json({ error, text: "Error deleting from databse" })
+                    )
+                break
+
             default:
                 res.status(404).json({ error: "Method not found" })
         }

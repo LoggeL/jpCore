@@ -133,6 +133,7 @@ app.use('/api/private', (req, res, next) => {
   const token = req.headers.authorization
   jwt.verify(token, jwtSecret, function (err, decoded) {
     if (!err) {
+      req.jwt = decoded
       next()
     } else {
       return res.status(403).json({ error: 'Invalid token' })
@@ -146,8 +147,8 @@ app.use('/api/admin', (req, res, next) => {
   jwt.verify(token, jwtSecret, function (err, decoded) {
     if (!err) {
       try {
-        const payload = JSON.parse(new Buffer.from((token.split('.')[1]), 'base64').toString('ascii'))
-        if (!payload.roles.includes('admin')) return res.status(403).json({ error: 'Missing permissions' });
+        if (!decoded.roles.includes('admin')) return res.status(403).json({ error: 'Missing permissions' });
+        req.jwt = decoded
         next()
       } catch (error) {
         return res.status(400).json({ text: 'Malformed JWT payload', error });
