@@ -26,7 +26,7 @@ module.exports = (app, userDB) => {
                                 users: users.rows.map(e => e.doc).map(e => ({ _id: e._id, email: e.email, name: e.name, roles: e.roles, date: e.date, verifiedMail: e.verifiedMail }))
                             }
                         })
-                }).catch(error => res.status(500).json({ error, text: "Error resolving promises" }))
+                }).catch(error => res.status(500).json({ error: String(error), text: "Error resolving promises" }))
 
                 break
             default:
@@ -40,11 +40,6 @@ module.exports = (app, userDB) => {
             case "setzeItem":
                 const name = req.body.name
                 if (!name) return res.status(400).json({ error: "Missing Name" })
-                console.log({
-                    name,
-                    userID: null,
-                    date: Date.now()
-                })
                 poolpartyItems.post({
                     name,
                     userID: null,
@@ -77,7 +72,6 @@ module.exports = (app, userDB) => {
                         db = poolpartyVolunteers
                         break
                     default:
-                        console.log(element)
                         return res.status(404).json({ error: "Unbekannte Methode" })
                 }
                 db.remove({ _id, _rev }).then(() =>
@@ -101,7 +95,7 @@ module.exports = (app, userDB) => {
                 }).then(itemDocs => {
                     const items = itemDocs.docs.map(e => ({ name: e.name, _id: e._id, _rev: e._rev }))
                     return res.status(200).json({ success: 'Operation successful', data: items })
-                }).catch(error => res.status(500).json({ error, text: "Error loadding Items" }))
+                }).catch(error => res.status(500).json({ error: String(error), text: "Error loadding Items" }))
                 break
 
             case "ladeNutzer":
@@ -128,7 +122,7 @@ module.exports = (app, userDB) => {
                                 volunteer: volunteer.docs,
                             }
                         })
-                }).catch(error => res.status(500).json({ error, text: "Error loadding Data from Database" }))
+                }).catch(error => res.status(500).json({ error: String(error), text: "Error loadding Data from Database" }))
                 break
             default:
                 res.status(404).json({ error: "Not found" })
@@ -142,7 +136,6 @@ module.exports = (app, userDB) => {
             case "setzeAnmeldung":
                 userID = null
                 userID = req.body.userID
-                console.log(req.body)
                 if (!userID) return res.status(400).json({ error: "Keine UserID angegeben" })
 
                 const personen = req.body.personen
@@ -167,10 +160,10 @@ module.exports = (app, userDB) => {
                             res.status(200).json({ success: "Erfolgreich angemeldet" })
                         )
                         .catch(error =>
-                            res.status(503).json({ error, text: "Error inserting into databse" })
+                            res.status(503).json({ error: String(error), text: "Error inserting into databse" })
                         )
                 }).catch(error =>
-                    res.status(503).json({ error, text: "Error inserting into databse" })
+                    res.status(503).json({ error: String(error), text: "Error inserting into databse" })
                 )
                 break
             case "setzeVolunteer":
@@ -188,7 +181,7 @@ module.exports = (app, userDB) => {
                         res.status(200).json({ success: "Erfolgreich angemeldet" })
                     )
                     .catch(error =>
-                        res.status(503).json({ error, text: "Error inserting into databse" })
+                        res.status(503).json({ error: String(error), text: "Error inserting into databse" })
                     )
                 break
             case "volunteerAbmelden":
@@ -202,7 +195,7 @@ module.exports = (app, userDB) => {
                     res.status(200).json({ success: "Erfolgreich abgemeldet" })
                 )
                     .catch(error =>
-                        res.status(503).json({ error, text: "Error deleting from databse" })
+                        res.status(503).json({ error: String(error), text: "Error deleting from databse" })
                     )
                 break
 
@@ -236,7 +229,7 @@ module.exports = (app, userDB) => {
                     res.status(200).json({ success: "Erfolgreich abgemeldet" })
                 )
                     .catch(error =>
-                        res.status(503).json({ error, text: "Error deleting from databse" })
+                        res.status(503).json({ error: String(error), text: "Error deleting from databse" })
                     )
                 break
 

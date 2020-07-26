@@ -5,7 +5,7 @@ const bodyParser = require('body-parser')
 const PouchDB = require('pouchdb');
 PouchDB.plugin(require('pouchdb-find'));
 
-const db = new PouchDB('db/Users');
+const db = new PouchDB('./db/Users');
 const cryptoSettings = require('./crypto.json')
 
 const path = require('path')
