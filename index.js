@@ -2,10 +2,13 @@
 const express = require('express')
 const cors = require('cors')
 const bodyParser = require('body-parser')
-const PouchDB = require('pouchdb');
-PouchDB.plugin(require('pouchdb-find'));
+const db = require('knex')({
+  client: 'sqlite3',
+  connection: {
+    filename: './data.sqlite',
+  },
+})
 
-const db = new PouchDB('./db/Users');
 const cryptoSettings = require('./crypto.json')
 
 const path = require('path')
@@ -33,19 +36,19 @@ app.get('/', function (req, res) {
 })
 
 // Register Route
-app.post('/api/register', async (req, res) => {
+app.post('/api/admin/register', async (req, res) => {
 
   const email = req.body.email
-  if (!email) res.status(400).send({ error: 'Keine Mail angegeben' })
+  if (!email) res.status(400).send({ error: 'Missing Mail' })
 
   const password = req.body.password
-  if (!password) res.status(400).send({ error: 'Kein Passwort angegeben' })
+  if (!password) res.status(400).send({ error: 'Missing Password' })
 
   const name = req.body.name
-  if (!name) res.status(400).send({ error: 'Kein Name angegeben' })
+  if (!name) res.status(400).send({ error: 'Missing Name' })
 
-  const exists = await db.find({ selector: { email } })
-  if (exists.docs.length > 0) return res.status(400).send({ error: 'Nutzer existiert bereits' })
+  const exists = await db.where('email', email)
+  if (exists.docs.length > 0) return res.status(400).send({ error: 'User already exists' })
 
   const role = req.body.role
 
@@ -67,7 +70,7 @@ app.post('/api/register', async (req, res) => {
         date: Date.now(),
         verifiedMail: false
       }).then(() => {
-        return res.status(200).json({ success: 'Nutzer erstellt' })
+        return res.status(200).json({ success: 'User created' })
       }).catch(error => {
         return res.status(500).json({ error })
       })
@@ -77,22 +80,22 @@ app.post('/api/register', async (req, res) => {
 
 // Login HTML Route
 app.get('/login', (req, res) => {
-  res.sendFile(path.join(__dirname, 'html', 'login.html'))
+  res.sendFile(path.join(__dirname, 'html', 'index.html'))
 })
 
 // Login API Route
-app.post('/api/login', (req, res) => {
+app.post('/api/public/login', async (req, res) => {
   const email = req.body.email
   const password = req.body.password
 
   if (!email) res.status(403).json({ error: 'No Username present' })
   if (!password) res.status(403).json({ error: 'No Password present' })
 
-  db.find({ selector: { email: email }, fields: ['email', 'hash', 'salt', 'roles', 'name', '_id'] }).then(function (result) {
+  db('account').where('email', email).select('*').then(result => {
 
-    const row = result.docs[0]
+    const row = result[0]
 
-    if (!row) return res.status(403).json({ error: 'Falsche Zugangsdaten' })
+    if (!row) return res.status(403).json({ error: 'Invalid email address' })
 
     crypto.pbkdf2(
       password,
@@ -107,7 +110,7 @@ app.post('/api/login', (req, res) => {
 
         let roles = row.roles
 
-        if (row.hash != hash) return res.status(403).json({ error: 'Falsche Zugangsdaten' })
+        if (row.hash != hash) return res.status(403).json({ error: 'Invalid password' })
         const token = jwt.sign({ _id: row._id, email: email, roles: roles, name: row.name }, jwtSecret)
         res.status(200).json({ success: token })
       })
@@ -118,6 +121,19 @@ app.post('/api/login', (req, res) => {
   });
 })
 
+app.get('api/public/verifyMail', (req, res) => {
+  const token = req.query.token
+  jwt.verify(token, jwtSecret, function (err, decoded) {
+    if (!err) {
+      const userID = decoded.userID
+      if (decoded.type = "verifyMail" && userID) {
+        db('').where(decoded.mail)
+      }
+    } else {
+      return res.status(403).json({ error: 'Invalid token' })
+    }
+  })
+})
 
 // API Routes
 app.get('/api/private/test', (req, res) => {
@@ -126,6 +142,10 @@ app.get('/api/private/test', (req, res) => {
 
 app.get('/api/public/test', (req, res) => {
   res.status(200).json({ success: 'Systems operational' })
+})
+
+app.get('/api/admin/test', (req, res) => {
+  res.status(200).json({ success: 'Token has admin powers' })
 })
 
 // Auth Handler
@@ -161,7 +181,7 @@ app.use('/api/admin', (req, res, next) => {
 })
 
 // Other routes
-require('./routes')(app, db);
+require('./routes/poolparty')(app, db)
 
 // Launch our app on port 3000
 app.listen('3000', () => console.log('Server listening on port 3000'))
