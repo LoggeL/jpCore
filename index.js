@@ -1,7 +1,6 @@
 // Load in our dependencies
 const express = require('express')
 const cors = require('cors')
-const bodyParser = require('body-parser')
 const db = require('knex')({
   client: 'sqlite3',
   connection: {
@@ -25,10 +24,8 @@ const jwtSecret = cryptoSettings.secret
 // Configure Express
 app.use(express.static(path.join(__dirname, 'html')));
 app.use(cors())
-app.use(bodyParser.json());       // to support JSON-encoded bodies
-app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
-  extended: true
-}))
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Home Route
 app.get('/', function (req, res) {
@@ -111,7 +108,7 @@ app.post('/api/public/login', async (req, res) => {
         let roles = row.roles
 
         if (row.hash != hash) return res.status(403).json({ error: 'Invalid password' })
-        const token = jwt.sign({ _id: row._id, email: email, roles: roles, name: row.name }, jwtSecret)
+        const token = jwt.sign({ id: row.id, email: email, roles: roles, name: row.name }, jwtSecret)
         res.status(200).json({ success: token })
       })
 
@@ -148,7 +145,7 @@ app.get('/api/admin/test', (req, res) => {
   res.status(200).json({ success: 'Token has admin powers' })
 })
 
-// Auth Handler
+// User Handler
 app.use('/api/private', (req, res, next) => {
   const token = req.headers.authorization
   jwt.verify(token, jwtSecret, function (err, decoded) {

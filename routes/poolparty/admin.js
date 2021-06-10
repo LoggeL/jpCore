@@ -1,29 +1,43 @@
 module.exports = (app, db) => {
 
     // Admin GET Route
-    // Gets all registrations
-    app.get('/api/admin/poolparty/registration', async (req, res) => {
-        db('account').select('*').then(account => {
+    // Gets all accounts
+    app.get('/api/admin/poolparty/account', async (req, res) => {
+        db('account').select('id', 'name', 'email', 'verifiedMail', 'roles', 'lastActivity').then(account => {
             res.status(200).json(account)
         }).catch(error => {
+            console.error(error)
             res.status(500).json({ error, text: "Error fetching account" })
         })
     })
 
+    // Gets all registrations
+    app.get('/api/admin/poolparty/registration', async (req, res) => {
+        db('registration').leftJoin('account', 'account.id', 'registration.account_id').select('registration.id', 'account.name', 'registration.people', 'registration.lastActivity').then(registration => {
+            res.status(200).json(registration)
+        }).catch(error => {
+            console.error(error)
+            res.status(500).json({ error, text: "Error fetching registration" })
+        })
+    })
+
+
     // Gets all items
     app.get('/api/admin/poolparty/item', async (req, res) => {
-        db('item').leftJoin('account', 'account.id', 'item.account_id').select('account.name', 'item.name').then(item => {
+        db('item').leftJoin('account', 'item.account_id', 'account.id').select('item.id', 'item.name as itemName', 'account.name as accountName', 'item.lastActivity').then(item => {
             res.status(200).json(item)
         }).catch(error => {
+            console.error(error)
             res.status(500).json({ error, text: "Error fetching items" })
         })
     })
 
     // Gets all volunteers
     app.get('/api/admin/poolparty/volunteer', async (req, res) => {
-        db('volunteer').leftJoin('account', 'account.id', 'volunteer.account_id').select('*').then(volunteer => {
+        db('volunteer').leftJoin('account', 'account.id', 'volunteer.account_id').select('volunteer.id', 'account.name', 'volunteer.duration', 'volunteer.lastActivity').then(volunteer => {
             res.status(200).json(volunteer)
         }).catch(error => {
+            console.error(error)
             res.status(500).json({ error, text: "Error fetching volunteers" })
         })
     })
@@ -36,18 +50,20 @@ module.exports = (app, db) => {
         db('item').insert({ name }).then(response => {
             res.status(200).json({ success: "Added item" })
         }).catch(error => {
+            console.error(error)
             res.status(500).json({ error, text: "Error adding item" })
         })
     })
 
     // Admin DELETE Route
     // Removes an item
-    app.delete('/api/admin/poolparty/item', async (req, res) => {
-        const id = req.body.id
+    app.delete('/api/admin/poolparty/item/:id', async (req, res) => {
+        const id = req.params.id
         if (!id) return res.status(400).json({ error: "Missing item identifier" })
         db('item').where('id', id).del().then(response => {
             res.status(200).json({ success: "Removed item" })
         }).catch(error => {
+            console.error(error)
             res.status(500).json({ error, text: "Error deleting item" })
         })
     })
@@ -59,6 +75,7 @@ module.exports = (app, db) => {
         db('volunteer').where('id', id).del().then(response => {
             res.status(200).json(response)
         }).catch(error => {
+            console.error(error)
             res.status(500).json({ error, text: "Error deleting item" })
         })
     })
@@ -78,6 +95,7 @@ module.exports = (app, db) => {
 
             res.status(200).json(response)
         } catch (error) {
+            console.error(error)
             res.status(500).json({ error, text: "Error deleting item" })
         }
     })

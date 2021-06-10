@@ -95,9 +95,9 @@ document.getElementById('submit').onclick = () => {
     if (!username) return console.log("No Username")
     if (!password) return console.log("No Password")
 
-    console.log(window.location.host + '/api/login')
+    console.log(window.location.host + '/api/public/login')
 
-    fetch('api/login', {
+    fetch('api/public/login', {
         method: "post",
         headers: {
             'Accept': 'application/json',

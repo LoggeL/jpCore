@@ -1,8 +1,9 @@
+# VSCode
+.vscode
+
 # db 
-db/Users/*
-db/Poolparty/Items/*
-db/Poolparty/Volunteers/*
-db/Poolparty/Anmeldungen/*
+data.sqlite
+db2.json
 
 # Logs
 logs

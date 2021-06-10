@@ -1,14 +1,20 @@
 module.exports = (app, db) => {
 
     app.get('/api/private/poolparty/me', async (req, res) => {
-        const userID = req.jwt._id
+        const userID = req.jwt.id
         try {
-            const item = await db('item').where('account_id', userID).select('*')
-            const volunteer = await db('volunteer').where('account_id', userID).select('*')
-            const registration = await db('volunteer').where('account_id', userID).select('*')
-            res.status(200).json({ item, volunteer, registration })
+            const item = await db('item').where('account_id', userID).select('name')
+            const volunteer = await db('volunteer').where('account_id', userID).select('duration', 'lastActivity')
+            const registration = await db('registration').where('account_id', userID).select('people', 'lastActivity')
+            res.status(200).json(
+                {
+                    item: item ? item[0] : null,
+                    volunteer: volunteer ? volunteer[0] : null,
+                    registration: registration ? registration[0] : null
+                }
+            )
         } catch (error) {
-            res.status(500).json({ error, text: "Error fetching information" })
+            res.status(500).json({ error: error.message, text: "Error fetching information" })
         }
     })
 }
