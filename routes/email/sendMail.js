@@ -5,6 +5,8 @@ module.exports = (receiver, data, transporter) => {
     data.from = 'poolparty@jupeters.de'
     data.to = receiver
 
+    // Temporary suspend Mail sending
+
     transporter.sendMail(data, function (error, info) {
         if (error) {
             console.log(error);
