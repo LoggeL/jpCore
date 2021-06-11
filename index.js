@@ -58,7 +58,7 @@ app.post('/api/admin/register', async (req, res) => {
     cryptoSettings.digest,
     (err, key) => {
       const hash = key.toString('base64')
-      const result = db('account').insert({
+      db('account').insert({
         email: email,
         name: name,
         salt: salt,
@@ -140,7 +140,6 @@ app.get('api/public/verifyMail', (req, res) => {
     if (!err) {
       const userID = decoded.userID
       if (decoded.type = "verifyMail" && userID) {
-        db('').where(decoded.mail)
       }
     } else {
       return res.status(403).json({ error: 'Invalid token' })
@@ -168,6 +167,7 @@ app.use('/api/private', (req, res, next) => {
     if (!err) {
       req.jwt = decoded
       next()
+      db('account').where('id', decoded.id).update({ lastActivity: Date.now() })
     } else {
       return res.status(403).json({ error: 'Invalid token' })
     }
