@@ -44,8 +44,8 @@ app.post('/api/admin/register', async (req, res) => {
   const name = req.body.name
   if (!name) res.status(400).send({ error: 'Missing Name' })
 
-  const exists = await db.where('email', email)
-  if (exists.docs.length > 0) return res.status(400).send({ error: 'User already exists' })
+  const exists = await db('account').where('email', email)
+  if (exists[0]) return res.status(400).send({ error: 'User already exists' })
 
   const role = req.body.role
 
@@ -58,21 +58,37 @@ app.post('/api/admin/register', async (req, res) => {
     cryptoSettings.digest,
     (err, key) => {
       const hash = key.toString('base64')
-      const result = db.post({
+      const result = db('account').insert({
         email: email,
         name: name,
         salt: salt,
         hash: hash,
         roles: role ? [role] : [],
-        date: Date.now(),
+        lastActivity: Date.now(),
         verifiedMail: false
       }).then(() => {
         return res.status(200).json({ success: 'User created' })
       }).catch(error => {
+        console.error(error)
         return res.status(500).json({ error })
       })
     }
   )
+})
+
+
+// Delete Account Route
+app.delete('/api/admin/register/:email', async (req, res) => {
+
+  const email = req.params.id
+  if (!email) res.status(400).send({ error: 'Missing Mail' })
+
+  db('item').where('id', id).del().then(response => {
+    res.status(200).json({ success: "Removed Account" })
+  }).catch(error => {
+    console.error(error)
+    res.status(500).json({ error, text: "Error deleting Account" })
+  })
 })
 
 // Login HTML Route
@@ -85,7 +101,7 @@ app.post('/api/public/login', async (req, res) => {
   const email = req.body.email
   const password = req.body.password
 
-  if (!email) res.status(403).json({ error: 'No Username present' })
+  if (!email) res.status(403).json({ error: 'No email present' })
   if (!password) res.status(403).json({ error: 'No Password present' })
 
   db('account').where('email', email).select('*').then(result => {

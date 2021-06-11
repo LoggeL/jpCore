@@ -5,6 +5,9 @@
 data.sqlite
 db2.json
 
+# MailConfig
+routes/email/MailConfig.json
+
 # Logs
 logs
 *.log

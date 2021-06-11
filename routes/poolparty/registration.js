@@ -1,3 +1,6 @@
+const email = require('../email.js')
+const mailTemplates = require('../email/mailTemplates.js')
+
 module.exports = (app, db) => {
 
     // Registers account
@@ -27,9 +30,18 @@ module.exports = (app, db) => {
             })
 
             await db('item').where('id', itemID).update({ account_id: userID })
-            return res.status(200).json({ success: true })
 
+            const emailData = await db('account').where('id', userID).select('email', 'name')
+            email.sendMail(emailData[0].email,
+                mailTemplates.registrationSuccessful({
+                    name: emailData[0].name,
+                    itemName: item[0].name
+                })
+            )
+
+            return res.status(200).json({ success: true })
         } catch (error) {
+            console.error(error)
             return res.status(500).json({ error, text: "Error during registration" })
         }
     })
@@ -43,9 +55,9 @@ module.exports = (app, db) => {
             if (registration.length == 0) return res.status(404).json({ error: "No registration found" })
             await db('volunteer').where('account_id', id).del()
             await db('item').where('account_id', id).update({ account_id: null })
-            const response = await db('registration').where('account_id', id).del()
+            await db('registration').where('account_id', id).del()
 
-            res.status(200).json(response)
+            res.status(200).json({ success: "Sucessfully unregistered" })
         } catch (error) {
             console.error(error)
             res.status(500).json({ error, text: "Error deleting item" })
