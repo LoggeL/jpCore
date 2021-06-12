@@ -42,7 +42,6 @@ module.exports = (app, db) => {
             logger({
                 event: "registered",
                 name: emailData[0].name,
-                itemName: item[0].name
             })
 
             return res.status(200).json({ success: true })
@@ -64,11 +63,9 @@ module.exports = (app, db) => {
             await db('registration').where('account_id', id).del()
 
             const userData = await db('account').where('id', id).select('name')
-            const itemData = await db('item').where('account_id', id).select('name')
             logger({
                 event: "removed registered",
                 name: userData[0].name,
-                itemName: itemData[0].name
             })
 
             res.status(200).json({ success: "Sucessfully unregistered" })
