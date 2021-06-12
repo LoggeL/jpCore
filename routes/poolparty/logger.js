@@ -12,6 +12,7 @@ module.exports = (data) => {
     }
     fetch(ifttt.url, {
         method: "post",
-        body: JSON.stringify(jsonData)
+        body: JSON.stringify(jsonData),
+        headers: { "Content-Type": "application/json" }
     })
 }
