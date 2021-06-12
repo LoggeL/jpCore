@@ -1,5 +1,6 @@
 const email = require('../email.js')
 const mailTemplates = require('../email/mailTemplates.js')
+const logger = require('./logger.js')
 
 module.exports = (app, db) => {
 
@@ -38,6 +39,11 @@ module.exports = (app, db) => {
                     itemName: item[0].name
                 })
             )
+            logger({
+                event: "registered",
+                name: emailData[0].name,
+                itemName: item[0].name
+            })
 
             return res.status(200).json({ success: true })
         } catch (error) {
@@ -56,6 +62,14 @@ module.exports = (app, db) => {
             await db('volunteer').where('account_id', id).del()
             await db('item').where('account_id', id).update({ account_id: null })
             await db('registration').where('account_id', id).del()
+
+            const userData = await db('account').where('id', userID).select('name')
+            const itemData = await db('item').where('account_id', id).select('name')
+            logger({
+                event: "removed registered",
+                name: userData[0].name,
+                itemName: itemData[0].name
+            })
 
             res.status(200).json({ success: "Sucessfully unregistered" })
         } catch (error) {

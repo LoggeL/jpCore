@@ -1,3 +1,5 @@
+const logger = require('./logger.js')
+
 module.exports = (app, db) => {
     // Gets all free items
     app.post('/api/private/poolparty/volunteer', async (req, res) => {
@@ -21,6 +23,12 @@ module.exports = (app, db) => {
                 lastActivity: Date.now()
             })
 
+            const userData = await db('account').where('id', userID).select('name')
+            logger({
+                event: "volunteer",
+                name: userData[0].name,
+            })
+
             res.status(200).json({ success: "Successfully registered" })
 
         } catch (error) {
@@ -36,6 +44,13 @@ module.exports = (app, db) => {
 
         try {
             const response = await db('volunteer').where('account_id', userID).del()
+
+            const userData = await db('account').where('id', userID).select('name')
+            logger({
+                event: "removed volunteer",
+                name: userData[0].name,
+            })
+
             res.status(200).json(response)
         } catch (error) {
             console.error(error)
