@@ -9,7 +9,7 @@ module.exports = {
     })
     volunteerSuccessful: (data) => ({
         "subject": `Deine Poolparty Volunteer-Anmeldung!`,
-        "text": `Hi ${data.name}!\nVielen Dank, dass du uns helfen wirst!\nDu kannst von #loggehiereinfügen bis #loggehiereinfügen.\nWir planen fest mit dir!\nDein Poolparty-Team`
+        "text": `Hi ${data.name}!\nVielen Dank, dass du uns helfen wirst!\nDu kannst im Zeitraum: #loggehiereinfügen \nWir planen fest mit dir!\nDein Poolparty-Team`
     })
     unvolunteerSuccessful: (data) => ({
         "subject": `Deine Poolparty Volunteer-Abmeldung!`,
