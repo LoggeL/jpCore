@@ -80,7 +80,7 @@ app.post('/api/admin/register', async (req, res) => {
 // Delete Account Route
 app.delete('/api/admin/register/:email', async (req, res) => {
 
-  const email = req.params.id
+  const email = req.params.email
   if (!email) res.status(400).send({ error: 'Missing Mail' })
 
   db('item').where('id', id).del().then(response => {
