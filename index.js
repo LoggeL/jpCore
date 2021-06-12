@@ -84,7 +84,7 @@ app.delete('/api/admin/register/:id', async (req, res) => {
   if (!id) res.status(400).json({ error: 'Missing id' })
 
   db('account').where('id', id).del().then(response => {
-    if (response) {
+    if (!response) {
       return res.status(404).json({ error: "Unknown Account ID" })
     }
     return res.status(200).json({ success: "Removed Account" })
