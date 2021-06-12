@@ -1,4 +1,6 @@
 const logger = require('./logger.js')
+const email = require('../email.js')
+const mailTemplates = require('../email/mailTemplates.js')
 
 module.exports = (app, db) => {
     // Gets all free items
@@ -23,7 +25,13 @@ module.exports = (app, db) => {
                 lastActivity: Date.now()
             })
 
-            const userData = await db('account').where('id', userID).select('name')
+            const userData = await db('account').where('id', userID).select('email', 'name')
+            email.sendMail(userData[0].email,
+                mailTemplates.volunteerSuccessful({
+                    name: userData[0].name,
+                    duration: duration
+                })
+            )
             logger({
                 event: "volunteer",
                 name: userData[0].name,
@@ -45,7 +53,12 @@ module.exports = (app, db) => {
         try {
             const response = await db('volunteer').where('account_id', userID).del()
 
-            const userData = await db('account').where('id', userID).select('name')
+            const userData = await db('account').where('id', userID).select('email', 'name')
+            email.sendMail(userData[0].email,
+                mailTemplates.unvolunteerSuccessful({
+                    name: userData[0].name
+                })
+            )
             logger({
                 event: "removed volunteer",
                 name: userData[0].name,

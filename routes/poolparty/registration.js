@@ -59,10 +59,17 @@ module.exports = (app, db) => {
             const registration = await db('registration').where('account_id', id)
             if (registration.length == 0) return res.status(404).json({ error: "No registration found" })
             await db('volunteer').where('account_id', id).del()
-            await db('item').where('account_id', id).update({ account_id: null })
+            const item = await db('item').where('account_id', id).update({ account_id: null }).select('name')
             await db('registration').where('account_id', id).del()
 
             const userData = await db('account').where('id', id).select('name')
+
+            email.sendMail(emailData[0].email,
+                mailTemplates.unregistrationSuccessful({
+                    name: emailData[0].name,
+                    itemName: item[0].name
+                })
+            )
             logger({
                 event: "removed registered",
                 name: userData[0].name,
