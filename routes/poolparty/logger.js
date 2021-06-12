@@ -2,6 +2,9 @@ const fetch = require('node-fetch')
 const ifttt = require('ifttt')
 
 module.exports = (data) => {
+
+    console.log('Logger', data)
+
     const jsonData = {
         value1: data.event,
         value2: data.name,
