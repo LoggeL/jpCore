@@ -169,7 +169,7 @@ app.use('/api/private', (req, res, next) => {
   jwt.verify(token, jwtSecret, function (err, decoded) {
     if (!err) {
       req.jwt = decoded
-      db('account').where('id', decoded.id).update({ lastActivity: Date.now() })
+      db('account').where('id', decoded.id).update({ lastActivity: Date.now() }).then(console.log)
       next()
     } else {
       return res.status(403).json({ error: 'Invalid token' })

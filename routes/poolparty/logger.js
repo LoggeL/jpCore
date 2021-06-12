@@ -1,8 +1,6 @@
 const fetch = require('node-fetch')
 const ifttt = require('./ifttt.json')
 
-console.log(ifttt.url)
-
 module.exports = (data) => {
 
     console.log('Logger', data)
