@@ -1,5 +1,5 @@
 const fetch = require('node-fetch')
-const ifttt = require('ifttt')
+const ifttt = require('./ifttt.json')
 
 module.exports = (data) => {
 
