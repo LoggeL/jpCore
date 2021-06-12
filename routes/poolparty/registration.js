@@ -63,7 +63,7 @@ module.exports = (app, db) => {
             await db('item').where('account_id', id).update({ account_id: null })
             await db('registration').where('account_id', id).del()
 
-            const userData = await db('account').where('id', userID).select('name')
+            const userData = await db('account').where('id', id).select('name')
             const itemData = await db('item').where('account_id', id).select('name')
             logger({
                 event: "removed registered",
