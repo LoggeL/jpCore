@@ -62,11 +62,11 @@ module.exports = (app, db) => {
             const item = await db('item').where('account_id', id).update({ account_id: null }).select('name')
             await db('registration').where('account_id', id).del()
 
-            const userData = await db('account').where('id', id).select('name')
+            const userData = await db('account').where('id', id).select('name', 'email')
 
-            email.sendMail(emailData[0].email,
+            email.sendMail(userData[0].email,
                 mailTemplates.unregistrationSuccessful({
-                    name: emailData[0].name,
+                    name: userData[0].name,
                     itemName: item[0].name
                 })
             )
