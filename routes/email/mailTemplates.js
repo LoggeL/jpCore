@@ -5,7 +5,7 @@ module.exports = {
     }),
     unregistrationSuccessful: (data) => ({
         "subject": `Deine Poolparty Abmeldung!`,
-        "text": `Hi ${data.name}!\nDies ist die Bestätigung für deine Abmeldung von unserer Poolparty!\nSchade dass du nicht kommen kannst (und wir uns nun selbst um: ${data.itemName} kümmern müssen.\nWir hoffen, dich nächstes Jahr wieder zu sehen!\nDein Poolparty-Team`
+        "text": `Hi ${data.name}!\nDies ist die Bestätigung für deine Abmeldung von unserer Poolparty!\nSchade dass du nicht kommen kannst (und wir uns nun selbst um ${data.itemName} kümmern müssen).\nWir hoffen, dich nächstes Jahr wieder zu sehen!\nDein Poolparty-Team`
     }),
     volunteerSuccessful: (data) => ({
         "subject": `Deine Poolparty Volunteer-Anmeldung!`,
