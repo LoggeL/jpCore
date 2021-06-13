@@ -169,7 +169,7 @@ app.use('/api/private', (req, res, next) => {
   jwt.verify(token, jwtSecret, async (err, decoded) => {
     if (!err) {
       req.jwt = decoded
-      if (!decoded.id) console.log(decoded)
+      if (!decoded.id) console.log("decodedJWT", decoded)
       // if (decoded.id) await db('account').where('id', decoded.id).update({ lastActivity: Date.now() })
       next()
     } else {
