@@ -166,10 +166,10 @@ app.get('/api/admin/test', (req, res) => {
 // User Handler
 app.use('/api/private', (req, res, next) => {
   const token = req.headers.authorization
-  jwt.verify(token, jwtSecret, function (err, decoded) {
+  jwt.verify(token, jwtSecret, async (err, decoded) => {
     if (!err) {
       req.jwt = decoded
-      db('account').where('id', decoded.id).update({ lastActivity: Date.now() })
+      await db('account').where('id', decoded.id).update({ lastActivity: Date.now() })
       next()
     } else {
       return res.status(403).json({ error: 'Invalid token' })
