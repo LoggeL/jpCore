@@ -5,12 +5,12 @@ const loginForm = document.getElementById('loginForm')
 const usernameElement = document.getElementById('usernameField')
 const passwordField = document.getElementById('passwordField')
 
-let token
+let resetToken
 
 try {
-    token = window.location.href.split('=')[1]
+    resetToken = window.location.href.split('=')[1]
     // Decode JWT Payload
-    const tokenSplit = token.split('.')
+    const tokenSplit = resetToken.split('.')
     const tokenInfoStr = atob(tokenSplit[1])
     const tokenInfo = JSON.parse(tokenInfoStr)
 
@@ -33,7 +33,7 @@ loginForm.onsubmit = (e) => {
 
     if (!email) return console.log("Email fehlt")
 
-    if (token) {
+    if (resetToken) {
         const password = passwordField.value
 
         if (!password) return console.log("Passwort fehlt")
@@ -45,7 +45,7 @@ loginForm.onsubmit = (e) => {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                token: token,
+                token: resetToken,
                 password: password
             })
         }).then(async resp => {
