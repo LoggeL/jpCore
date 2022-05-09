@@ -115,7 +115,7 @@ app.post('/api/public/login', async (req, res) => {
   if (!email) res.status(403).json({ error: 'Keine Email angegeben' })
   if (!password) res.status(403).json({ error: 'Kein Passwort angegeben' })
 
-  db('account').where('email', email).select('salt', 'verifiedMail', 'hash', 'name', 'roles').first().then(result => {
+  db('account').where('email', email).select('salt', 'verifiedMail', 'hash', 'name', 'roles', 'id').first().then(result => {
 
     if (!result) return res.status(403).json({ error: 'Unbekannte E-Mail' })
 
