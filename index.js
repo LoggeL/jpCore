@@ -7,6 +7,7 @@ const db = require('knex')({
     filename: './data.sqlite',
   },
 })
+require('dotenv').config()
 
 const cryptoSettings = require('./crypto.json')
 
@@ -20,6 +21,11 @@ const jwt = require('jsonwebtoken')
 
 const app = express()
 const jwtSecret = cryptoSettings.secret
+
+const nodemailer = require('nodemailer')
+const mailConfig = require('./routes/email/mailConfig.json')
+
+const transporter = nodemailer.createTransport(mailConfig)
 
 // Configure Express
 app.use(express.static(path.join(__dirname, 'html')));
@@ -36,20 +42,21 @@ app.get('/', function (req, res) {
 app.post('/api/admin/register', async (req, res) => {
 
   const email = req.body.email
-  if (!email) res.status(400).send({ error: 'Missing Mail' })
+  if (!email) res.status(400).send({ error: 'Mail fehlt' })
 
   const password = req.body.password
-  if (!password) res.status(400).send({ error: 'Missing Password' })
+  if (!password) res.status(400).send({ error: 'Passwort fehlt' })
 
   const name = req.body.name
-  if (!name) res.status(400).send({ error: 'Missing Name' })
+  if (!name) res.status(400).send({ error: 'Name fehlt' })
 
   const exists = await db('account').where('email', email)
-  if (exists[0]) return res.status(400).send({ error: 'User already exists' })
+  if (exists[0]) return res.status(400).send({ error: 'Nutzer existiert bereits' })
 
   const role = req.body.role
 
   const salt = crypto.randomBytes(128).toString('base64')
+
   crypto.pbkdf2(
     password,
     salt,
@@ -64,10 +71,11 @@ app.post('/api/admin/register', async (req, res) => {
         salt: salt,
         hash: hash,
         roles: role ? [role] : [],
+        createdAt: Date.now(),
         lastActivity: Date.now(),
         verifiedMail: false
       }).then(() => {
-        return res.status(200).json({ success: 'User created' })
+        return res.status(200).json({ success: 'Nutzer erstellt' })
       }).catch(error => {
         console.error(error)
         return res.status(500).json({ error })
@@ -81,16 +89,16 @@ app.post('/api/admin/register', async (req, res) => {
 app.delete('/api/admin/register/:id', async (req, res) => {
 
   const id = req.params.id
-  if (!id) res.status(400).json({ error: 'Missing id' })
+  if (!id) res.status(400).json({ error: 'Account ID fehlt' })
 
   db('account').where('id', id).del().then(response => {
     if (!response) {
-      return res.status(404).json({ error: "Unknown Account ID" })
+      return res.status(404).json({ error: "Unbekannte Account ID" })
     }
-    return res.status(200).json({ success: "Removed Account" })
+    return res.status(200).json({ success: "Account gelöscht" })
   }).catch(error => {
     console.error(error)
-    return res.status(500).json({ error, text: "Error deleting Account" })
+    return res.status(500).json({ error, text: "Fehler beim löschen des Accounts" })
   })
 })
 
@@ -104,18 +112,18 @@ app.post('/api/public/login', async (req, res) => {
   const email = req.body.email
   const password = req.body.password
 
-  if (!email) res.status(403).json({ error: 'No email present' })
-  if (!password) res.status(403).json({ error: 'No Password present' })
+  if (!email) res.status(403).json({ error: 'Keine Email angegeben' })
+  if (!password) res.status(403).json({ error: 'Kein Passwort angegeben' })
 
-  db('account').where('email', email).select('*').then(result => {
+  db('account').where('email', email).select('salt', 'verifiedMail', 'hash', 'name', 'roles').first().then(result => {
 
-    const row = result[0]
+    if (!result) return res.status(403).json({ error: 'Unbekannte E-Mail' })
 
-    if (!row) return res.status(403).json({ error: 'Invalid email address' })
+    if (!result.verifiedMail) return res.status(403).json({ error: 'Email nicht verifiziert' })
 
     crypto.pbkdf2(
       password,
-      row.salt,
+      result.salt,
       cryptoSettings.iterations,
       cryptoSettings.hashBytes,
       cryptoSettings.digest,
@@ -124,10 +132,8 @@ app.post('/api/public/login', async (req, res) => {
 
         const hash = key.toString('base64')
 
-        let roles = row.roles
-
-        if (row.hash != hash) return res.status(403).json({ error: 'Invalid password' })
-        const token = jwt.sign({ id: row.id, email: email, roles: roles, name: row.name }, jwtSecret)
+        if (result.hash != hash) return res.status(403).json({ error: 'Falsches Passwort' })
+        const token = jwt.sign({ id: result.id, email: email, roles: result.roles, name: result.name }, jwtSecret)
         res.status(200).json({ success: token })
       })
 
@@ -137,7 +143,7 @@ app.post('/api/public/login', async (req, res) => {
   });
 })
 
-app.get('api/public/verifyMail', (req, res) => {
+app.get('/api/public/verifyMail', (req, res) => {
   const token = req.query.token
   jwt.verify(token, jwtSecret, function (err, decoded) {
     if (!err) {
@@ -145,22 +151,104 @@ app.get('api/public/verifyMail', (req, res) => {
       if (decoded.type = "verifyMail" && userID) {
       }
     } else {
-      return res.status(403).json({ error: 'Invalid token' })
+      return res.status(403).json({ error: 'Unzulässiger Token' })
     }
   })
 })
 
-// API Routes
-app.get('/api/private/test', (req, res) => {
-  res.status(200).json({ success: 'Valid token' })
+app.post('/api/public/sendPasswordReset', (req, res) => {
+  const email = req.body.email
+  if (!email) return res.status(403).json({ error: 'Keine Email angegeben' })
+
+  db('account').where('email', email).select('*').first().then(result => {
+    if (!result) return res.status(403).json({ error: 'Unbekannte E-Mail' })
+
+    if (!result.verifiedMail) return res.status(403).json({ error: 'Email nicht verifiziert' })
+
+    // Create a token to prevent multiple requests
+    const passwordResetToken = crypto.randomBytes(128).toString('base64')
+
+    // Add passwordResetToken to the user
+    db('account').where('id', result.id).update({ passwordResetToken }).then(() => {
+      // Send email with token
+
+      const token = jwt.sign({ userID: result.id, type: "resetPassword", email, passwordResetToken }, jwtSecret)
+
+      const url = `${process.env.HOST}/forgotPassword.html?token=${token}`
+      const mailOptions = {
+        from: '"JP Poolparty" <poolparty@jupeters.de>',
+        to: email,
+        subject: 'Passwort zurücksetzen',
+        text: `Klicken Sie auf den folgenden Link um Ihr Passwort zurückzusetzen: ${url}`
+      }
+
+      transporter.sendMail(mailOptions, function (error, info) {
+        if (error) {
+          console.log(error)
+          return res.status(500).json({ error })
+        } else {
+          return res.status(200).json({ success: 'E-Mail wurde versendet' })
+        }
+      })
+    }).catch(error => {
+      console.error(error)
+      return res.status(500).json({ error })
+    })
+  }).catch(function (error) {
+    console.log(error)
+    return res.status(500).json({ error })
+  });
+
 })
 
-app.get('/api/public/test', (req, res) => {
-  res.status(200).json({ success: 'Systems operational' })
-})
+app.post('/api/public/resetPassword', (req, res) => {
+  const { token, password } = req.body
+  jwt.verify(token, jwtSecret, function (err, decoded) {
+    if (!err) {
+      const { userID, email, type, passwordResetToken } = decoded
 
-app.get('/api/admin/test', (req, res) => {
-  res.status(200).json({ success: 'Token has admin powers' })
+      // Get user from db 
+      db('account').where('id', userID).select('*').first().then(result => {
+        if (!result) return res.status(403).json({ error: 'Unbekannte E-Mail' })
+
+        if (email != result.email) return res.status(403).json({ error: 'Unbekannte E-Mail' })
+
+        if (!result.verifiedMail) return res.status(403).json({ error: 'Email nicht verifiziert' })
+
+        if (type !== "resetPassword") return res.status(403).json({ error: 'Falscher Token Typ' })
+
+        if (passwordResetToken !== result.passwordResetToken) return res.status(403).json({ error: 'Reset Token abgelaufen / schon verwendet' })
+
+        // Create a new salt and hash
+        const salt = crypto.randomBytes(128).toString('base64')
+
+        crypto.pbkdf2(
+          password,
+          salt,
+          cryptoSettings.iterations,
+          cryptoSettings.hashBytes,
+          cryptoSettings.digest,
+          (err, key) => {
+            const hash = key.toString('base64')
+            db('account').where('id', userID).update({
+              salt: salt,
+              hash: hash,
+              passwordResetToken: null
+            }).then(() => {
+              return res.status(200).json({ success: 'Passwort wurde geändert' })
+            }).catch(error => {
+              console.error(error)
+              return res.status(500).json({ error })
+            })
+          })
+      }).catch(function (error) {
+        console.log(error)
+        return res.status(500).json({ error })
+      })
+    } else {
+      return res.status(403).json({ error: 'Unzulässiger Token' })
+    }
+  })
 })
 
 // User Handler
@@ -173,7 +261,7 @@ app.use('/api/private', (req, res, next) => {
       // if (decoded.id) await db('account').where('id', decoded.id).update({ lastActivity: Date.now() })
       next()
     } else {
-      return res.status(403).json({ error: 'Invalid token' })
+      return res.status(403).json({ error: 'Unzulässiger Token' })
     }
   })
 })
@@ -184,7 +272,7 @@ app.use('/api/admin', (req, res, next) => {
   jwt.verify(token, jwtSecret, function (err, decoded) {
     if (!err) {
       try {
-        if (!decoded.roles.includes('admin')) return res.status(403).json({ error: 'Missing permissions' });
+        if (!decoded.roles.includes('admin')) return res.status(403).json({ error: 'Fehlende Rechte' });
         req.jwt = decoded
         next()
       } catch (error) {
@@ -192,9 +280,22 @@ app.use('/api/admin', (req, res, next) => {
       }
 
     } else {
-      return res.status(403).json({ error: 'Invalid token' })
+      return res.status(403).json({ error: 'Unzulässiger Token' })
     }
   })
+})
+
+// API Test Routes
+app.get('/api/private/test', (req, res) => {
+  res.status(200).json({ success: 'Gültigker Token' })
+})
+
+app.get('/api/public/test', (req, res) => {
+  res.status(200).json({ success: 'API operational' })
+})
+
+app.get('/api/admin/test', (req, res) => {
+  res.status(200).json({ success: 'Gültige Adminrechte' })
 })
 
 // Other routes

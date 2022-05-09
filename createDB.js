@@ -20,6 +20,7 @@ const db2 = require('./db2.json').sort((a, b) => a.date - b.date)
             table.boolean('verifiedMail')
             table.string('hash')
             table.string('salt')
+            table.string('passwordResetToken')
             table.timestamp('createdAt')
             table.timestamp('lastActivity').defaultTo(null)
             table.json('roles')
@@ -66,19 +67,10 @@ const db2 = require('./db2.json').sort((a, b) => a.date - b.date)
             table.integer('people')
             table.integer('account_id').unsigned()
             table.foreign('account_id').references('account.id')
+            table.string('music')
             table.timestamp('lastActivity').defaultTo(null)
         })
     }
 
-    const mailVerification = await knex.schema.hasTable('mailVerification')
-    console.log('mailVerification', mailVerification)
-
-    if (!mailVerification) {
-        await knex.schema.createTable('mailVerification', table => {
-            table.increments('id').primary()
-            table.integer('account_id').unsigned()
-            table.foreign('account_id').references('account.id')
-            table.string('token')
-        })
-    }
+    knex.destroy()
 })()

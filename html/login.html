@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jupeters Login</title>
+    <link rel="stylesheet" href="w3.min.css" />
+    <link rel="stylesheet" href="main.css" />
+  </head>
+
+  <body>
+    <div class="login-container">
+      <div class="container card-4 round-xlarge">
+        <h1 class="center">Jupeters Login</h1>
+        <img class="center" src="JP.svg" />
+
+        <form class="panel" id="loginForm">
+          <p>
+            <label for="usernameField">Nutzername (E-Mail)</label>
+            <input
+              class="input"
+              type="email"
+              placeholder="Nutzername"
+              id="usernameField"
+              autocomplete="username"
+            />
+          </p>
+          <p>
+            <label for="passwordField">Passwort</label>
+            <input
+              class="input"
+              type="password"
+              placeholder="Passwort"
+              id="passwordField"
+              autocomplete="current-password"
+            />
+          </p>
+          <p>
+            <button class="btn blue" id="submit" type="submit">
+              Bestätigen
+            </button>
+            <a class="btn yellow" id="forgotPassword" href="forgotPassword.html"
+              >Passwort vergessen?</a
+            >
+            <br />
+            <span id="responseStatus" class="margin-left text-red"></span>
+          </p>
+        </form>
+        <form class="panel hide" id="acceptForm">
+          <a class="btn blue" id="accept">Bestätigen</a>
+          <a class="btn yellow hide" id="deny">Ablehnen</a>
+          <span id="acceptName" class="margin-left"></span>
+        </form>
+      </div>
+    </div>
+    <div class="bg bg1"></div>
+    <div class="bg bg2"></div>
+
+    <script src="login.js"></script>
+  </body>
+</html>

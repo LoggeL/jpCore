@@ -13,7 +13,7 @@ module.exports = (app, db) => {
 
     // Gets all registrations
     app.get('/api/admin/poolparty/registration', async (req, res) => {
-        db('registration').leftJoin('account', 'account.id', 'registration.account_id').select('registration.id', 'account.name', 'registration.people', 'registration.lastActivity').then(registration => {
+        db('registration').leftJoin('account', 'account.id', 'registration.account_id').select('registration.id', 'account.name', 'registration.people', 'registration.lastActivity', 'registration.music').then(registration => {
             res.status(200).json(registration)
         }).catch(error => {
             console.error(error)

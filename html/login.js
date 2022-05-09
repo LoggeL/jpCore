@@ -10,75 +10,45 @@ const permissionMap = {
     "MODIFY": "Deine Daten zu bearbeiten"
 }
 
-const service = urlParams.get('service')
-const hostname = new URL("https://" + service).hostname
-document.getElementById('serviceText').innerText = hostname
-if (!service) {
-    alert("Dienst nicht richtig konfiguriert (service parameter missing)")
-    //window.location = document.referrer
-}
+let token = localStorage.getItem('token')
 
-let token
+if (token) {
+    // Already authed
+    fetch('api/private/test', {
+        method: "get",
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'Authorization': token
+        }
+    }).then(async response => {
+        const resp = await response.json()
+        if (resp.error) {
+            // Invalid Cached Token => Remove from Cache
+            localStorage.removeItem('token')
+        }
+        else if (resp.success) {
+            // Valid Token, proceed login
+            const tokenSplit = token.split('.')
+            const tokenInfoStr = atob(tokenSplit[1])
+            const tokenInfo = JSON.parse(tokenInfoStr)
 
-const perms = urlParams.get('permissions').split(';')
-const permissionsElement = document.getElementById('permissions')
-let tokens = localStorage.getItem('tokens')
-try {
-    tokens = JSON.parse(tokens)
-}
-catch (e) {
-    console.error('LocalStorageParseError', e)
-    tokens = []
-}
+            document.getElementById('acceptName').innerText = `Angemeldet als: ${tokenInfo.name} (${tokenInfo.email})`
 
-if (!tokens) tokens = []
-else {
-    const tokenObj = tokens.find(e => e.hostname === hostname && JSON.stringify(e.permissions) == JSON.stringify(perms))
-    if (tokenObj) {
-        // Already authed
-        fetch('api/test', {
-            method: "post",
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                token: tokenObj.token
-            })
-        }).then(async response => {
-            const resp = await response.json()
-            if (resp.error) {
-                // Invalid Cached Token => Remove from Cache
-                tokens.splice(tokens.indexOf(tokenObj), 1)
+            document.getElementById('acceptForm').className = 'panel'
+            document.getElementById('loginForm').className = 'hide panel'
+            const deny = document.getElementById('deny')
+            deny.classList.remove('hide')
+            deny.onclick = () => {
+                localStorage.removeItem('token')
+                window.location.reload()
             }
-            else if (resp.success) {
-                // Valid Token, proceed login
-                token = tokenObj.token
-                const tokenSplit = token.split('.')
-                const tokenInfoStr = atob(tokenSplit[1])
-                const tokenInfo = JSON.parse(tokenInfoStr)
 
-                document.getElementById('acceptName').innerText = `Angemeldet als: ${tokenInfo.name} (${tokenInfo.email})`
-
-                document.getElementById('acceptForm').className = 'panel'
-                document.getElementById('loginForm').className = 'hide panel'
-
-                document.getElementById('accept').onclick = () => redirect(token)
-            }
-            else {
-                console.error('Server Error from /api/test')
-            }
-        })
-    }
-}
-
-if (perms) {
-    permissionsElement.innerHTML = ''
-    perms.forEach(p => {
-        if (!permissionMap[p]) return
-        const li = document.createElement('li')
-        li.innerText = permissionMap[p]
-        permissionsElement.append(li)
+            document.getElementById('accept').onclick = () => redirect(token)
+        }
+        else {
+            console.error('Server Error from /api/test')
+        }
     })
 }
 
@@ -87,15 +57,16 @@ const passwordElement = document.getElementById('passwordField')
 
 const submitBtn = document.getElementById('submit')
 const responseStatus = document.getElementById('responseStatus')
+const loginForm = document.getElementById('loginForm')
 
-document.getElementById('submit').onclick = () => {
+loginForm.onsubmit = (e) => {
+    e.preventDefault()
+
     const username = usernameElement.value
     const password = passwordElement.value
 
-    if (!username) return console.log("No Username")
-    if (!password) return console.log("No Password")
-
-    console.log(window.location.host + '/api/public/login')
+    if (!username) return console.log("Nutzername fehlt")
+    if (!password) return console.log("Passwort fehlt")
 
     fetch('api/public/login', {
         method: "post",
@@ -123,13 +94,10 @@ document.getElementById('submit').onclick = () => {
             responseStatus.innerText = 'Angemeldet'
             submitBtn.className = 'btn green disabled'
             responseStatus.className = 'text-green margin-left'
-            tokens.push({ hostname: hostname, token: resp.success, permissions: perms })
 
-            localStorage.setItem('tokens', JSON.stringify(tokens))
+            localStorage.setItem('token', resp.success)
 
-            token = resp.success
-
-            redirect(token)
+            redirect(resp.success)
         }
         else {
             responseStatus.innerText = "Serverfehler"
@@ -145,5 +113,6 @@ document.getElementById('submit').onclick = () => {
 }
 
 function redirect(tkn) {
+    const service = "poolparty.jupeters.de"
     window.location.href = 'http://' + service + '#' + tkn
 }
