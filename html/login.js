@@ -33,6 +33,14 @@ if (token) {
             const tokenInfoStr = atob(tokenSplit[1])
             const tokenInfo = JSON.parse(tokenInfoStr)
 
+            if (!tokenInfo.id) {
+                // Invalid Token, remove from cache
+                localStorage.removeItem('token')
+
+                // Redirect to login
+                window.location.href = 'login.html'
+            }
+
             document.getElementById('acceptName').innerText = `Angemeldet als: ${tokenInfo.name} (${tokenInfo.email})`
 
             document.getElementById('acceptForm').className = 'panel'
@@ -113,6 +121,6 @@ loginForm.onsubmit = (e) => {
 }
 
 function redirect(tkn) {
-    const service = "poolparty.jupeters.de"
-    window.location.href = 'http://' + service + '#' + tkn
+    const service = window.location.hostname == 'jpcore.logge.top' ? 'https://poolparty.jupeters.de' : 'http://localhost:8080'
+    window.location.href = service + '/login.html#' + tkn
 }
