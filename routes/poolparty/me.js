@@ -5,7 +5,7 @@ module.exports = (app, db) => {
         try {
             const item = await db('item').where('account_id', userID).select('name')
             const volunteer = await db('volunteer').where('account_id', userID).select('duration', 'lastActivity')
-            const registration = await db('registration').where('account_id', userID).select('people', 'lastActivity')
+            const registration = await db('registration').where('account_id', userID).select('people', 'lastActivity', 'music')
             res.status(200).json(
                 {
                     item: item ? item[0] : null,
