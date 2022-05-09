@@ -16,9 +16,11 @@ module.exports = (app, db) => {
         const itemID = req.body.itemID
         if (!itemID) return res.status(400).json({ error: "Missing itemID" })
 
+        const music = req.body.music
+
         try {
-            const registered = await db('registration').where('account_id', userID)
-            if (registered == true) return res.status(400).json({ error: 'Already registered' })
+            const registered = await db('registration').where('account_id', userID).first()
+            if (registered) return res.status(400).json({ error: 'Already registered' })
 
             const item = await db('item').where('id', itemID)
             if (!item) return res.status(400).json({ error: 'Invalid item' })
@@ -27,7 +29,8 @@ module.exports = (app, db) => {
             await db('registration').insert({
                 account_id: userID,
                 people,
-                lastActivity: Date.now()
+                lastActivity: Date.now(),
+                music
             })
 
             await db('item').where('id', itemID).update({ account_id: userID })
