@@ -11,7 +11,7 @@ module.exports = (app, db) => {
 
         const people = req.body.people
         if (!people) return res.status(400).json({ error: "Missing people count" })
-        if (people < 1 || people > 4) return res(403).json({ error: "Invalid people count" })
+        if (people < 1 || people > 2) return res(403).json({ error: "Invalid people count" })
 
         const itemID = req.body.itemID
         if (!itemID) return res.status(400).json({ error: "Missing itemID" })
