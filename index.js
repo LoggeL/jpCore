@@ -211,7 +211,7 @@ app.post('/api/public/resetPassword', (req, res) => {
       db('account').where('id', userID).select('*').first().then(result => {
         if (!result) return res.status(403).json({ error: 'Unbekannte E-Mail' })
 
-        if (email != result.email) return res.status(403).json({ error: 'Unbekannte E-Mail' })
+        if (email != result.email) return res.status(403).json({ error: 'Falsche E-Mail' })
 
         if (!result.verifiedMail) return res.status(403).json({ error: 'Email nicht verifiziert' })
 
@@ -258,7 +258,7 @@ app.use('/api/private', (req, res, next) => {
     if (!err) {
       req.jwt = decoded
       if (!decoded.id) console.log("decodedJWT", decoded)
-      // if (decoded.id) await db('account').where('id', decoded.id).update({ lastActivity: Date.now() })
+      if (decoded.id) await db('account').where('id', decoded.id).update({ lastActivity: Date.now() })
       next()
     } else {
       return res.status(403).json({ error: 'Unzulässiger Token' })

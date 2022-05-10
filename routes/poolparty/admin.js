@@ -69,8 +69,8 @@ module.exports = (app, db) => {
     })
 
     // Removes a volunteer
-    app.delete('/api/admin/poolparty/volunteer', async (req, res) => {
-        const id = req.body.id
+    app.delete('/api/admin/poolparty/volunteer/:id', async (req, res) => {
+        const id = req.params.id
         if (!id) return res.status(400).json({ error: "Missing volunteer identifier" })
         db('volunteer').where('id', id).del().then(response => {
             res.status(200).json(response)
@@ -81,8 +81,8 @@ module.exports = (app, db) => {
     })
 
     // Removes a registration
-    app.delete('/api/admin/poolparty/registration', async (req, res) => {
-        const id = req.body.id
+    app.delete('/api/admin/poolparty/registration/:id', async (req, res) => {
+        const id = req.params.id
         try {
 
             if (!id) return res.status(400).json({ error: "Missing registration identifier" })
