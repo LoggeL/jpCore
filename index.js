@@ -73,7 +73,7 @@ app.post('/api/admin/register', async (req, res) => {
         roles: role ? [role] : [],
         createdAt: Date.now(),
         lastActivity: Date.now(),
-        verifiedMail: false
+        verifiedMail: true
       }).then(() => {
         return res.status(200).json({ success: 'Nutzer erstellt' })
       }).catch(error => {
