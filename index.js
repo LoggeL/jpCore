@@ -298,6 +298,9 @@ app.get('/api/admin/test', (req, res) => {
   res.status(200).json({ success: 'Gültige Adminrechte' })
 })
 
+// Services
+require('./services/backup')(app, db)
+
 // Other routes
 require('./routes/poolparty')(app, db)
 
