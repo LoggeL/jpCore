@@ -33,14 +33,6 @@ app.use(cors())
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
-const sqliteAdmin = require('@juztcode/sqlite-admin')({
-  database: './data.sqlite',
-  secret: '<secret-key-use-when-encrypting-tokens>',
-  adminPass: '<admin-password-use-when-logging>',
-})
-
-app.use('/admin', sqliteAdmin.adminRouter)
-
 // Home Route
 app.get('/', function (req, res) {
   res.status(200).send('API operational')
