@@ -15,6 +15,7 @@ module.exports = (data) => {
   const payload = {
     chat_id: TELEGRAM_CHAT_ID,
     text,
+    parse_mode: 'markdown',
   }
   fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
     method: 'post',
