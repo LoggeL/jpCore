@@ -4,7 +4,7 @@
 # db 
 data.sqlite
 db2.json
-routes/poolparty/ifttt.json
+routes/poolparty/telegramConfig.json
 
 # MailConfig
 routes/email/MailConfig.json
