@@ -9,7 +9,9 @@ module.exports = (data) => {
 
   let text = ''
   for (const [key, value] of Object.entries(data)) {
-    text += `**${key}**: ${value}\n`
+    // Capitalize first letter of key
+    keyCap = key.charAt(0).toUpperCase() + key.slice(1)
+    text += `*${keyCap}*: ${value}\n`
   }
 
   const payload = {
