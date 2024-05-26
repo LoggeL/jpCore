@@ -144,7 +144,8 @@ module.exports = (app, db) => {
 
       if (
         updateData.itemID !== undefined &&
-        updateData.itemID != registration.itemID
+        (await db('item').where('account_id', userID).first().id) !==
+          updateData.itemID
       ) {
         const item = await db('item').where('id', updateData.itemID).first()
         if (!item) return res.status(400).json({ error: 'Unzulässige ItemID' })
