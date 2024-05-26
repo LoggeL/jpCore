@@ -143,6 +143,16 @@ module.exports = (app, db) => {
         }
       }
 
+      if (changedFields.itemID_old && changedFields.itemID_new) {
+        // populate with item name
+        const item = await db('item')
+          .where('id', updateData.itemID)
+          .select('name')
+          .first()
+        changedFields.itemID_old = `${oldItem.name} (${oldItem.id})`
+        changedFields.itemID_new = `${item.name} (${updateData.itemID})`
+      }
+
       console.log(updateData)
       console.log(updateFields)
       console.log(changedFields)
