@@ -57,7 +57,7 @@ module.exports = (app, db) => {
         music,
       })
 
-      return res.status(200).json({ success: true })
+      return res.status(200).json({ success: 'Erfolgreich registriert' })
     } catch (error) {
       console.error(error)
       return res.status(500).json({ error, text: 'Fehler beim Registrieren' })
@@ -197,7 +197,7 @@ module.exports = (app, db) => {
         ...changedFields,
       })
 
-      return res.status(200).json({ success: true, updateFields })
+      return res.status(200).json({ success: 'Erfolgreich aktualisiert' })
     } catch (error) {
       console.error(error)
       return res
