@@ -144,7 +144,7 @@ module.exports = (app, db) => {
 
       if (
         updateData.itemID !== undefined &&
-        (await db('item').where('account_id', userID).first().id) !==
+        (await db('item').where('account_id', userID).first().id) !=
           updateData.itemID
       ) {
         const item = await db('item').where('id', updateData.itemID).first()
