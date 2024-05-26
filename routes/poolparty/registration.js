@@ -166,8 +166,6 @@ module.exports = (app, db) => {
           return res.status(400).json({ error: 'Item bereits vergeben' })
 
         updateFields.itemID = updateData.itemID
-        changedFields.itemID_old = oldItem.id
-        changedFields.itemID_new = updateData.itemID
 
         await db('item')
           .where('account_id', userID)
