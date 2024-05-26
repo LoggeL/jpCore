@@ -137,22 +137,22 @@ module.exports = (app, db) => {
         }
       }
 
+      let oldItem
+      if (updateData.itemID !== undefined) {
+        oldItem = await db('item').where('account_id', userID).first()
+      }
+
       console.log(updateData)
       console.log(updateFields)
       console.log(changedFields)
       console.log(registration)
+      console.log(oldItem)
 
-      if (
-        updateData.itemID !== undefined &&
-        (await db('item').where('account_id', userID).first().id) !=
-          updateData.itemID
-      ) {
+      if (updateData.itemID !== undefined && updateData.itemID != oldItem.id) {
         const item = await db('item').where('id', updateData.itemID).first()
         if (!item) return res.status(400).json({ error: 'Unzulässige ItemID' })
         if (item.account_id)
           return res.status(400).json({ error: 'Item bereits vergeben' })
-
-        const oldItem = await db('item').where('account_id', userID).first()
 
         updateFields.itemID = updateData.itemID
         changedFields.itemID_old = oldItem.id
