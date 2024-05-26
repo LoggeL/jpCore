@@ -2,7 +2,9 @@ module.exports = (app, db) => {
   app.get('/api/private/poolparty/me', async (req, res) => {
     const userID = req.jwt.id
     try {
-      const item = await db('item').where('account_id', userID).select('name')
+      const item = await db('item')
+        .where('account_id', userID)
+        .select('name', 'id')
       const volunteer = await db('volunteer')
         .where('account_id', userID)
         .select('duration', 'lastActivity')

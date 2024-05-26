@@ -6,15 +6,15 @@ module.exports = (app, db) => {
   // Registers account
   app.post('/api/private/poolparty/registration', async (req, res) => {
     const userID = req.jwt.id
-    if (!userID) return res.status(500).json({ error: 'Missing UserID' })
+    if (!userID) return res.status(500).json({ error: 'UserID fehlt' })
 
     const people = req.body.people
-    if (!people) return res.status(400).json({ error: 'Missing people count' })
+    if (!people) return res.status(400).json({ error: 'Personenanzahl fehlt' })
     if (people < 1 || people > 2)
-      return res(403).json({ error: 'Invalid people count' })
+      return res(403).json({ error: 'Unzulässige Personenanzahl' })
 
     const itemID = req.body.itemID
-    if (!itemID) return res.status(400).json({ error: 'Missing itemID' })
+    if (!itemID) return res.status(400).json({ error: 'ItemID fehlt' })
 
     const music = req.body.music
 
@@ -23,12 +23,12 @@ module.exports = (app, db) => {
         .where('account_id', userID)
         .first()
       if (registered)
-        return res.status(400).json({ error: 'Already registered' })
+        return res.status(400).json({ error: 'Account bereits registriert' })
 
       const item = await db('item').where('id', itemID)
-      if (!item) return res.status(400).json({ error: 'Invalid item' })
+      if (!item) return res.status(400).json({ error: 'Item nicht gefunden' })
       if (item[0].account_id)
-        return res.status(400).json({ error: 'Item already claimed' })
+        return res.status(400).json({ error: 'Item bereits vergeben' })
 
       await db('registration').insert({
         account_id: userID,
@@ -54,12 +54,13 @@ module.exports = (app, db) => {
         name: emailData[0].name,
         itemName: item[0].name,
         people,
+        music,
       })
 
       return res.status(200).json({ success: true })
     } catch (error) {
       console.error(error)
-      return res.status(500).json({ error, text: 'Error during registration' })
+      return res.status(500).json({ error, text: 'Fehler beim Registrieren' })
     }
   })
 
@@ -99,10 +100,78 @@ module.exports = (app, db) => {
         itemName: itemData[0].name,
       })
 
-      res.status(200).json({ success: 'Sucessfully unregistered' })
+      res.status(200).json({ success: 'Erfolgreich entfernt' })
     } catch (error) {
       console.error(error)
-      res.status(500).json({ error, text: 'Error deleting item' })
+      res.status(500).json({ error, text: 'Fehler beim Entfernen' })
+    }
+  })
+
+  // Modifies a registration
+  app.patch('/api/private/poolparty/registration', async (req, res) => {
+    const userID = req.jwt.id
+    if (!userID) return res.status(500).json({ error: 'UserID fehlt' })
+
+    const updateData = req.body
+    if (!updateData)
+      return res.status(400).json({ error: 'Keine Daten zum Updaten' })
+
+    try {
+      const registration = await db('registration')
+        .where('account_id', userID)
+        .first()
+      if (!registration)
+        return res.status(404).json({ error: 'Keine Registrierung gefunden' })
+
+      const validUpdateFields = ['people', 'music']
+      const updateFields = {}
+      const changedFields = {}
+
+      for (const field of validUpdateFields) {
+        if (updateData[field] !== undefined) {
+          updateFields[field] = updateData[field]
+          if (updateData[field] != registration[field]) {
+            changedFields[field + '_old'] = registration[field]
+            changedFields[field + '_new'] = updateData[field]
+          }
+        }
+      }
+
+      console.log(updateFields)
+
+      if (updateFields.people < 1 || updateFields.people > 2) {
+        return res.status(403).json({ error: 'Unzulässige Personenanzahl' })
+      }
+
+      if (Object.keys(changedFields).length === 0) {
+        return res.status(400).json({ error: 'Keine Änderungen vorgenommen' })
+      }
+
+      await db('registration').where('account_id', userID).update(updateFields)
+
+      const emailData = await db('account')
+        .where('id', userID)
+        .select('email', 'name')
+      email.sendMail(
+        emailData[0].email,
+        mailTemplates.registrationUpdate({
+          name: emailData[0].name,
+          updateFields,
+        })
+      )
+
+      logger({
+        event: 'updated registration',
+        name: emailData[0].name,
+        ...changedFields,
+      })
+
+      return res.status(200).json({ success: true, updateFields })
+    } catch (error) {
+      console.error(error)
+      return res
+        .status(500)
+        .json({ error, text: 'Error updating registration' })
     }
   })
 }

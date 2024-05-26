@@ -7,6 +7,16 @@ module.exports = {
     subject: `Deine Poolparty Abmeldung!`,
     text: `Hi ${data.name}!\nDies ist die Bestätigung für deine Abmeldung von unserer Poolparty!\nSchade dass du nicht kommen kannst (und wir uns nun selbst um ${data.itemName} kümmern müssen).\nWir hoffen, dich nächstes Jahr wieder zu sehen!\nDein Poolparty-Team`,
   }),
+  registrationUpdate: (data) => ({
+    subject: `Deine Poolparty Anmeldungs-Updates!`,
+    text: `Hi ${
+      data.name
+    }!\nDies ist die Bestätigung für die Aktualisierung deiner Anmeldung zur Poolparty!\nAktualisierte Details:\n${Object.entries(
+      data.updateFields
+    )
+      .map(([key, value]) => `- ${key}: ${value}`)
+      .join('\n')}\nWir freuen uns auf dich!\nDein Poolparty-Team`,
+  }),
   volunteerSuccessful: (data) => ({
     subject: `Deine Poolparty Volunteer-Anmeldung!`,
     text: `Hi ${data.name}!\nVielen Dank, dass du uns helfen wirst!\nDu kannst im Zeitraum: ${data.duration}\nWir planen fest mit dir!\nDein Poolparty-Team`,
