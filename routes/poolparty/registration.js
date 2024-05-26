@@ -195,7 +195,7 @@ module.exports = (app, db) => {
         emailData[0].email,
         mailTemplates.registrationUpdate({
           name: emailData[0].name,
-          updateFields,
+          changedFields,
         })
       )
 
