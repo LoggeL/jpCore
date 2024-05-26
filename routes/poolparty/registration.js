@@ -127,6 +127,12 @@ module.exports = (app, db) => {
       const updateFields = {}
       const changedFields = {}
 
+      let oldItem
+      if (updateData.itemID !== undefined) {
+        oldItem = await db('item').where('account_id', userID).first()
+        registration.itemID = oldItem.id
+      }
+
       for (const field of validUpdateFields) {
         if (updateData[field] !== undefined) {
           updateFields[field] = updateData[field]
@@ -135,11 +141,6 @@ module.exports = (app, db) => {
             changedFields[field + '_new'] = updateData[field]
           }
         }
-      }
-
-      let oldItem
-      if (updateData.itemID !== undefined) {
-        oldItem = await db('item').where('account_id', userID).first()
       }
 
       console.log(updateData)
