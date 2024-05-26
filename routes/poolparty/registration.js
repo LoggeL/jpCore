@@ -123,7 +123,7 @@ module.exports = (app, db) => {
       if (!registration)
         return res.status(404).json({ error: 'Keine Registrierung gefunden' })
 
-      const validUpdateFields = ['people', 'music']
+      const validUpdateFields = ['people', 'music', 'itemID']
       const updateFields = {}
       const changedFields = {}
 
@@ -137,7 +137,33 @@ module.exports = (app, db) => {
         }
       }
 
+      console.log(updateData)
       console.log(updateFields)
+      console.log(changedFields)
+      console.log(registration)
+
+      if (
+        updateData.itemID !== undefined &&
+        updateData.itemID != registration.itemID
+      ) {
+        const item = await db('item').where('id', updateData.itemID).first()
+        if (!item) return res.status(400).json({ error: 'Unzulässige ItemID' })
+        if (item.account_id)
+          return res.status(400).json({ error: 'Item bereits vergeben' })
+
+        const oldItem = await db('item').where('account_id', userID).first()
+
+        updateFields.itemID = updateData.itemID
+        changedFields.itemID_old = oldItem.id
+        changedFields.itemID_new = updateData.itemID
+
+        await db('item')
+          .where('account_id', userID)
+          .update({ account_id: null })
+        await db('item')
+          .where('id', updateData.itemID)
+          .update({ account_id: userID })
+      }
 
       if (updateFields.people < 1 || updateFields.people > 2) {
         return res.status(403).json({ error: 'Unzulässige Personenanzahl' })
@@ -147,11 +173,14 @@ module.exports = (app, db) => {
         return res.status(400).json({ error: 'Keine Änderungen vorgenommen' })
       }
 
+      // Remove itemID from updateFields
+      delete updateFields.itemID
       await db('registration').where('account_id', userID).update(updateFields)
 
       const emailData = await db('account')
         .where('id', userID)
         .select('email', 'name')
+
       email.sendMail(
         emailData[0].email,
         mailTemplates.registrationUpdate({
