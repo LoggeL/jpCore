@@ -248,11 +248,8 @@ app.post('/api/public/sendPasswordReset', (req, res) => {
 
 app.post('/api/public/resetPassword', (req, res) => {
   let { token, password } = req.body
-  // Decode token
-
   if (!token) return res.status(403).json({ error: 'Token fehlt' })
   if (!password) return res.status(403).json({ error: 'Passwort fehlt' })
-  token = Buffer.from(token, 'base64').toString('utf8')
 
   jwt.verify(token, jwtSecret, function (err, decoded) {
     if (!err) {
@@ -316,7 +313,7 @@ app.post('/api/public/resetPassword', (req, res) => {
           return res.status(500).json({ error })
         })
     } else {
-      return res.status(403).json({ error: 'Unzulässiger Token' })
+      return res.status(403).json({ error: 'Unzulässiger Token', err })
     }
   })
 })
