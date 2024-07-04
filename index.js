@@ -165,7 +165,11 @@ app.post('/api/public/login', async (req, res) => {
 })
 
 app.get('/api/public/verifyMail', (req, res) => {
-  const token = req.query.token
+  let token = req.query.token
+  // decode token
+  if (!token) return res.status(403).json({ error: 'Token fehlt' })
+  token = Buffer.from(token, 'base64').toString('utf8')
+
   jwt.verify(token, jwtSecret, function (err, decoded) {
     if (!err) {
       const userID = decoded.userID
@@ -201,7 +205,7 @@ app.post('/api/public/sendPasswordReset', (req, res) => {
         .then(() => {
           // Send email with token
 
-          const token = jwt.sign(
+          let token = jwt.sign(
             {
               userID: result.id,
               type: 'resetPassword',
@@ -210,6 +214,9 @@ app.post('/api/public/sendPasswordReset', (req, res) => {
             },
             jwtSecret
           )
+
+          // Base64 token
+          token = Buffer.from(token).toString('base64')
 
           const url = `${process.env.HOST}/forgotPassword.html?token=${token}`
           const mailOptions = {
@@ -240,7 +247,13 @@ app.post('/api/public/sendPasswordReset', (req, res) => {
 })
 
 app.post('/api/public/resetPassword', (req, res) => {
-  const { token, password } = req.body
+  let { token, password } = req.body
+  // Decode token
+
+  if (!token) return res.status(403).json({ error: 'Token fehlt' })
+  if (!password) return res.status(403).json({ error: 'Passwort fehlt' })
+  token = Buffer.from(token, 'base64').toString('utf8')
+
   jwt.verify(token, jwtSecret, function (err, decoded) {
     if (!err) {
       const { userID, email, type, passwordResetToken } = decoded
