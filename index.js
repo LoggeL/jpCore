@@ -49,6 +49,7 @@ app.post('/api/admin/register', async (req, res) => {
   const name = req.body.name
   if (!name) res.status(400).send({ error: 'Name fehlt' })
 
+  email = email.toLowerCase();
   const exists = await db('account').where('email', email)
   if (exists[0])
     return res.status(400).send({ error: 'Nutzer existiert bereits' })
@@ -116,12 +117,13 @@ app.get('/login', (req, res) => {
 
 // Login API Route
 app.post('/api/public/login', async (req, res) => {
-  const email = req.body.email
+  let email = req.body.email
   const password = req.body.password
 
   if (!email) res.status(403).json({ error: 'Keine Email angegeben' })
   if (!password) res.status(403).json({ error: 'Kein Passwort angegeben' })
 
+  email = email.toLowerCase();
   db('account')
     .where('email', email)
     .select('salt', 'verifiedMail', 'hash', 'name', 'roles', 'id')
