@@ -1,4 +1,3 @@
-const fetch = require('node-fetch')
 const {
   TELEGRAM_CHAT_ID,
   TELEGRAM_BOT_TOKEN,

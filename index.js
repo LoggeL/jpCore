@@ -6,6 +6,7 @@ const db = require('knex')({
   connection: {
     filename: './data.sqlite',
   },
+  useNullAsDefault: true,
 })
 require('dotenv').config()
 
