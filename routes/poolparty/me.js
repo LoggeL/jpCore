@@ -5,21 +5,24 @@ module.exports = (app, db) => {
       const item = await db('item')
         .where('account_id', userID)
         .select('name', 'id')
+        .first()
       const volunteer = await db('volunteer')
         .where('account_id', userID)
         .select('duration', 'lastActivity')
+        .first()
       const registration = await db('registration')
         .where('account_id', userID)
         .select('people', 'lastActivity', 'music')
+        .first()
+
       res.status(200).json({
-        item: item ? item[0] : null,
-        volunteer: volunteer ? volunteer[0] : null,
-        registration: registration ? registration[0] : null,
+        item: item || null,
+        volunteer: volunteer || null,
+        registration: registration || null,
       })
     } catch (error) {
-      res
-        .status(500)
-        .json({ error: error.message, text: 'Error fetching information' })
+      console.error('Error fetching user info:', error)
+      res.status(500).json({ error: error.message, text: 'Error fetching information' })
     }
   })
 }

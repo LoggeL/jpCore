@@ -3,25 +3,23 @@ const email = require('../email.js')
 const mailTemplates = require('../email/mailTemplates.js')
 
 module.exports = (app, db) => {
-  // Gets all free items
+  // Register as volunteer
   app.post('/api/private/poolparty/volunteer', async (req, res) => {
     const userID = req.jwt.id
     if (!userID) return res.status(500).json({ error: 'Missing UserID' })
 
-    const duration = req.body.duration
+    const { duration } = req.body
     if (!duration)
       return res.status(400).json({ error: 'No duration provided' })
 
     try {
-      const registered = await db('registration').where('account_id', userID)
+      const registered = await db('registration').where('account_id', userID).first()
       if (!registered)
         return res.status(400).json({ error: 'Not yet registered' })
 
-      const alreadyVolunteer = await db('volunteer').where('account_id', userID)
-      if (alreadyVolunteer.length > 0)
-        return res
-          .status(400)
-          .json({ error: 'Already registered as volunteer' })
+      const alreadyVolunteer = await db('volunteer').where('account_id', userID).first()
+      if (alreadyVolunteer)
+        return res.status(400).json({ error: 'Already registered as volunteer' })
 
       await db('volunteer').insert({
         account_id: userID,
@@ -32,25 +30,27 @@ module.exports = (app, db) => {
       const userData = await db('account')
         .where('id', userID)
         .select('email', 'name')
-      email.sendMail(
-        userData[0].email,
-        mailTemplates.volunteerSuccessful({
-          name: userData[0].name,
-          duration: duration,
-        })
-      )
-      logger({
-        event: 'volunteer',
-        name: userData[0].name,
-        duration: duration,
-      })
+        .first()
+
+      if (userData) {
+        email.sendMail(
+          userData.email,
+          mailTemplates.volunteerSuccessful({
+            name: userData.name,
+            duration,
+          })
+        )
+        logger({ event: 'volunteer', name: userData.name, duration })
+      }
 
       res.status(200).json({ success: 'Successfully registered' })
     } catch (error) {
-      res.status(500).json({ error, text: 'Error during registration' })
+      console.error('Error registering volunteer:', error)
+      res.status(500).json({ error: error.message, text: 'Error during registration' })
     }
   })
 
+  // Remove volunteer
   app.delete('/api/private/poolparty/volunteer', async (req, res) => {
     const userID = req.jwt.id
     if (!userID) return res.status(500).json({ error: 'Missing UserID' })
@@ -61,21 +61,20 @@ module.exports = (app, db) => {
       const userData = await db('account')
         .where('id', userID)
         .select('email', 'name')
-      email.sendMail(
-        userData[0].email,
-        mailTemplates.unvolunteerSuccessful({
-          name: userData[0].name,
-        })
-      )
-      logger({
-        event: 'removed volunteer',
-        name: userData[0].name,
-      })
+        .first()
+
+      if (userData) {
+        email.sendMail(
+          userData.email,
+          mailTemplates.unvolunteerSuccessful({ name: userData.name })
+        )
+        logger({ event: 'removed volunteer', name: userData.name })
+      }
 
       res.status(200).json(response)
     } catch (error) {
-      console.error(error)
-      res.status(500).json({ error, text: 'Error deleting item' })
+      console.error('Error deleting volunteer:', error)
+      res.status(500).json({ error: error.message, text: 'Error deleting item' })
     }
   })
 }

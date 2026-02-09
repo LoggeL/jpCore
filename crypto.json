@@ -1,5 +1,5 @@
 {
-    "iterations": 1000,
+    "iterations": 100000,
     "hashBytes": 32,
     "digest": "sha512",
     "secret": "temp-secret"

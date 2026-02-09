@@ -8,15 +8,11 @@ module.exports = (app, db) => {
     const userID = req.jwt.id
     if (!userID) return res.status(500).json({ error: 'UserID fehlt' })
 
-    const people = req.body.people
+    const { people, itemID, music } = req.body
     if (!people) return res.status(400).json({ error: 'Personenanzahl fehlt' })
     if (people < 1 || people > 2)
-      return res(403).json({ error: 'Unzulässige Personenanzahl' })
-
-    const itemID = req.body.itemID
+      return res.status(403).json({ error: 'Unzulässige Personenanzahl' })
     if (!itemID) return res.status(400).json({ error: 'ItemID fehlt' })
-
-    const music = req.body.music
 
     try {
       const registered = await db('registration')
@@ -25,9 +21,9 @@ module.exports = (app, db) => {
       if (registered)
         return res.status(400).json({ error: 'Account bereits registriert' })
 
-      const item = await db('item').where('id', itemID)
+      const item = await db('item').where('id', itemID).first()
       if (!item) return res.status(400).json({ error: 'Item nicht gefunden' })
-      if (item[0].account_id)
+      if (item.account_id)
         return res.status(400).json({ error: 'Item bereits vergeben' })
 
       await db('registration').insert({
@@ -42,25 +38,30 @@ module.exports = (app, db) => {
       const emailData = await db('account')
         .where('id', userID)
         .select('email', 'name')
-      email.sendMail(
-        emailData[0].email,
-        mailTemplates.registrationSuccessful({
-          name: emailData[0].name,
-          itemName: item[0].name,
-        })
-      )
+        .first()
+
+      if (emailData) {
+        email.sendMail(
+          emailData.email,
+          mailTemplates.registrationSuccessful({
+            name: emailData.name,
+            itemName: item.name,
+          })
+        )
+      }
+
       logger({
         event: 'registered',
-        name: emailData[0].name,
-        itemName: item[0].name,
+        name: emailData ? emailData.name : 'unknown',
+        itemName: item.name,
         people,
-        music,
+        music: music || '',
       })
 
       return res.status(200).json({ success: 'Erfolgreich registriert' })
     } catch (error) {
-      console.error(error)
-      return res.status(500).json({ error, text: 'Fehler beim Registrieren' })
+      console.error('Error in registration:', error)
+      return res.status(500).json({ error: error.message, text: 'Fehler beim Registrieren' })
     }
   })
 
@@ -69,41 +70,41 @@ module.exports = (app, db) => {
     const id = req.jwt.id
     try {
       if (!id)
-        return res
-          .status(400)
-          .json({ error: 'Missing registration identifier' })
-      const registration = await db('registration').where('account_id', id)
-      if (registration.length == 0)
+        return res.status(400).json({ error: 'Missing registration identifier' })
+
+      const registration = await db('registration').where('account_id', id).first()
+      if (!registration)
         return res.status(404).json({ error: 'No registration found' })
+
       await db('volunteer').where('account_id', id).del()
-      const itemData = await db('item').where('account_id', id).select('name')
-      const item = await db('item')
-        .where('account_id', id)
-        .update({ account_id: null })
-      console.log(item)
+      const itemData = await db('item').where('account_id', id).select('name').first()
+      await db('item').where('account_id', id).update({ account_id: null })
       await db('registration').where('account_id', id).del()
 
       const userData = await db('account')
         .where('id', id)
         .select('name', 'email')
+        .first()
 
-      email.sendMail(
-        userData[0].email,
-        mailTemplates.unregistrationSuccessful({
-          name: userData[0].name,
-          itemName: itemData[0].name,
+      if (userData && itemData) {
+        email.sendMail(
+          userData.email,
+          mailTemplates.unregistrationSuccessful({
+            name: userData.name,
+            itemName: itemData.name,
+          })
+        )
+        logger({
+          event: 'removed registered',
+          name: userData.name,
+          itemName: itemData.name,
         })
-      )
-      logger({
-        event: 'removed registered',
-        name: userData[0].name,
-        itemName: itemData[0].name,
-      })
+      }
 
       res.status(200).json({ success: 'Erfolgreich entfernt' })
     } catch (error) {
-      console.error(error)
-      res.status(500).json({ error, text: 'Fehler beim Entfernen' })
+      console.error('Error removing registration:', error)
+      res.status(500).json({ error: error.message, text: 'Fehler beim Entfernen' })
     }
   })
 
@@ -130,7 +131,7 @@ module.exports = (app, db) => {
       let oldItem
       if (updateData.itemID !== undefined) {
         oldItem = await db('item').where('account_id', userID).first()
-        registration.itemID = oldItem.id
+        registration.itemID = oldItem ? oldItem.id : null
       }
 
       for (const field of validUpdateFields) {
@@ -144,7 +145,6 @@ module.exports = (app, db) => {
       }
 
       if (changedFields.itemID_old && changedFields.itemID_new) {
-        // populate with item name
         const item = await db('item')
           .where('id', updateData.itemID)
           .select('name')
@@ -153,29 +153,17 @@ module.exports = (app, db) => {
         changedFields.itemID_new = `${item.name} (${updateData.itemID})`
       }
 
-      console.log(updateData)
-      console.log(updateFields)
-      console.log(changedFields)
-      console.log(registration)
-      console.log(oldItem)
-
-      if (updateData.itemID !== undefined && updateData.itemID != oldItem.id) {
+      if (updateData.itemID !== undefined && oldItem && updateData.itemID != oldItem.id) {
         const item = await db('item').where('id', updateData.itemID).first()
         if (!item) return res.status(400).json({ error: 'Unzulässige ItemID' })
         if (item.account_id)
           return res.status(400).json({ error: 'Item bereits vergeben' })
 
-        updateFields.itemID = updateData.itemID
-
-        await db('item')
-          .where('account_id', userID)
-          .update({ account_id: null })
-        await db('item')
-          .where('id', updateData.itemID)
-          .update({ account_id: userID })
+        await db('item').where('account_id', userID).update({ account_id: null })
+        await db('item').where('id', updateData.itemID).update({ account_id: userID })
       }
 
-      if (updateFields.people < 1 || updateFields.people > 2) {
+      if (updateFields.people !== undefined && (updateFields.people < 1 || updateFields.people > 2)) {
         return res.status(403).json({ error: 'Unzulässige Personenanzahl' })
       }
 
@@ -183,34 +171,37 @@ module.exports = (app, db) => {
         return res.status(400).json({ error: 'Keine Änderungen vorgenommen' })
       }
 
-      // Remove itemID from updateFields
+      // Remove itemID from updateFields (not a DB column on registration)
       delete updateFields.itemID
-      await db('registration').where('account_id', userID).update(updateFields)
+      if (Object.keys(updateFields).length > 0) {
+        await db('registration').where('account_id', userID).update(updateFields)
+      }
 
       const emailData = await db('account')
         .where('id', userID)
         .select('email', 'name')
+        .first()
 
-      email.sendMail(
-        emailData[0].email,
-        mailTemplates.registrationUpdate({
-          name: emailData[0].name,
-          changedFields,
-        })
-      )
+      if (emailData) {
+        email.sendMail(
+          emailData.email,
+          mailTemplates.registrationUpdate({
+            name: emailData.name,
+            changedFields,
+          })
+        )
+      }
 
       logger({
         event: 'updated registration',
-        name: emailData[0].name,
+        name: emailData ? emailData.name : 'unknown',
         ...changedFields,
       })
 
       return res.status(200).json({ success: 'Erfolgreich aktualisiert' })
     } catch (error) {
-      console.error(error)
-      return res
-        .status(500)
-        .json({ error, text: 'Error updating registration' })
+      console.error('Error updating registration:', error)
+      return res.status(500).json({ error: error.message, text: 'Error updating registration' })
     }
   })
 }
