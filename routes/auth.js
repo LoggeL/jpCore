@@ -130,15 +130,14 @@ module.exports = (app, db) => {
       const host = process.env.HOST || 'https://jpcore.logge.top'
       const url = `${host}/forgotPassword.html?token=${token}`
 
-      // Lazy-load mail config to avoid crash if file missing
-      let mailConfig
-      try {
-        mailConfig = require('./email/mailConfig.json')
-      } catch {
-        console.error('mailConfig.json not found, cannot send password reset email')
+      if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
+        console.error('SMTP_* env vars not set, cannot send password reset email')
         return res.status(500).json({ error: 'Mail service not configured' })
       }
-      const transporter = nodemailer.createTransport(mailConfig)
+      const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+      })
 
       await transporter.sendMail({
         from: '"JP Poolparty" <poolparty@jupeters.de>',

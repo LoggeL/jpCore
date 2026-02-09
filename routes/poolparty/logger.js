@@ -1,16 +1,14 @@
-let telegramConfig
-try {
-  telegramConfig = require('./telegramConfig.json')
-} catch {
-  console.warn('telegramConfig.json not found, Telegram logging disabled')
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID
+
+if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
+  console.warn('TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID env vars not set, Telegram logging disabled')
 }
 
 module.exports = (data) => {
   console.log('Logger', data)
 
-  if (!telegramConfig) return
-
-  const { TELEGRAM_CHAT_ID, TELEGRAM_BOT_TOKEN } = telegramConfig
+  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return
 
   let text = ''
   for (const [key, value] of Object.entries(data)) {

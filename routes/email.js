@@ -1,11 +1,16 @@
 const nodemailer = require('nodemailer')
 
 let transporter
-try {
-  const mailConfig = require('./email/mailConfig.json')
-  transporter = nodemailer.createTransport(mailConfig)
-} catch {
-  console.warn('mailConfig.json not found, email sending disabled')
+if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+  transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    },
+  })
+} else {
+  console.warn('SMTP_* env vars not set, email sending disabled')
 }
 
 module.exports = {
