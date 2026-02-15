@@ -1,6 +1,6 @@
 const logger = require('./logger.js')
 const email = require('../email.js')
-const mailTemplates = require('../email/mailTemplates.js')
+const mailTemplates = require('../email/templates.js')
 
 module.exports = (app, db) => {
   // Register as volunteer

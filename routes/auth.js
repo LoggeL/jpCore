@@ -1,5 +1,6 @@
 const crypto = require('crypto')
-const nodemailer = require('nodemailer')
+const email = require('./email.js')
+const templates = require('./email/templates.js')
 const { hashPassword, verifyPassword } = require('../lib/crypto-utils')
 const { signToken, signTokenNoExpiry, verifyToken } = require('../lib/jwt-utils')
 
@@ -130,21 +131,10 @@ module.exports = (app, db) => {
       const host = process.env.HOST || 'https://jpcore.logge.top'
       const url = `${host}/forgotPassword.html?token=${token}`
 
-      if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
-        console.error('SMTP_* env vars not set, cannot send password reset email')
-        return res.status(500).json({ error: 'Mail service not configured' })
-      }
-      const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST,
-        auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-      })
-
-      await transporter.sendMail({
-        from: '"JP Poolparty" <poolparty@jupeters.de>',
-        to: email,
-        subject: 'Passwort zurücksetzen',
-        text: `Klicken Sie auf den folgenden Link um Ihr Passwort zurückzusetzen: ${url}`,
-      })
+      await email.sendMail(
+        result.email,
+        templates.passwordReset({ url })
+      )
 
       return res.status(200).json({ success: 'E-Mail wurde versendet' })
     } catch (error) {

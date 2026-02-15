@@ -1,24 +1,32 @@
-const nodemailer = require('nodemailer')
+const { Resend } = require('resend')
 
-let transporter
-if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
-  transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  })
-} else {
-  console.warn('SMTP_* env vars not set, email sending disabled')
+const resend = process.env.RESEND_API_KEY
+  ? new Resend(process.env.RESEND_API_KEY)
+  : null
+
+if (!resend) {
+  console.warn('RESEND_API_KEY not set, email sending disabled')
 }
 
+const FROM = process.env.EMAIL_FROM || 'Poolparty <poolparty@logge.top>'
+
 module.exports = {
-  sendMail: (receiver, data) => {
-    if (!transporter) {
-      console.warn('Email not sent (no transporter configured):', receiver)
+  sendMail: async (receiver, data) => {
+    if (!resend) {
+      console.warn('Email not sent (no Resend API key):', receiver)
       return
     }
-    require('./email/sendMail.js')(receiver, data, transporter)
+    try {
+      const result = await resend.emails.send({
+        from: FROM,
+        to: receiver,
+        subject: data.subject,
+        html: data.html || undefined,
+        text: data.text || undefined,
+      })
+      console.log('Email sent:', result)
+    } catch (error) {
+      console.error('Email send error:', error)
+    }
   },
 }

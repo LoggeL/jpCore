@@ -1,5 +1,5 @@
 const email = require('../email.js')
-const mailTemplates = require('../email/mailTemplates.js')
+const mailTemplates = require('../email/templates.js')
 const logger = require('./logger.js')
 
 module.exports = (app, db) => {
