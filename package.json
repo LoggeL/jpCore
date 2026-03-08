@@ -31,5 +31,10 @@
   "bugs": {
     "url": "https://github.com/LoggeL/jpCore/issues"
   },
-  "homepage": "https://github.com/LoggeL/jpCore#readme"
+  "homepage": "https://github.com/LoggeL/jpCore#readme",
+  "overrides": {
+    "tar": "^7.5.10",
+    "qs": "^6.14.2",
+    "@tootallnate/once": "^3.0.1"
+  }
 }
