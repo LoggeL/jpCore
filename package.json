@@ -1,40 +1,49 @@
 {
   "name": "jpcore",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "dependencies": {
-    "cors": "^2.8.5",
-    "cron": "^3.5.0",
-    "dotenv": "^16.5.0",
-    "express": "^5.1.0",
-    "helmet": "^8.1.0",
-    "jsonwebtoken": "^9.0.2",
-    "knex": "^3.1.0",
-    "nodemailer": "^8.0.1",
-    "resend": "^6.9.2",
-    "sqlite3": "^5.1.7"
-  },
+  "version": "2.0.0",
+  "description": "Core Database & Auth behind jupeters.de",
+  "type": "module",
+  "main": "dist/index.js",
   "scripts": {
-    "start": "node index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "tsx watch --env-file=.env src/index.ts",
+    "build": "tsc",
+    "start": "node --env-file=.env dist/index.js",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx src/db/migrate.ts",
+    "db:studio": "drizzle-kit studio",
+    "migrate:legacy": "tsx scripts/migrate-from-legacy.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@fastify/cookie": "^11.0.2",
+    "@fastify/cors": "^11.0.1",
+    "@fastify/helmet": "^13.0.1",
+    "@fastify/rate-limit": "^10.3.0",
+    "@fastify/static": "^8.1.1",
+    "argon2": "^0.44.0",
+    "better-sqlite3": "^12.9.0",
+    "cron": "^3.5.0",
+    "drizzle-orm": "^0.38.4",
+    "fastify": "^5.2.1",
+    "fastify-type-provider-zod": "^4.0.2",
+    "nodemailer": "^8.0.1",
+    "pino": "^9.6.0",
+    "pino-pretty": "^13.0.0",
+    "resend": "^6.9.2",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.10.7",
+    "@types/nodemailer": "^6.4.17",
+    "drizzle-kit": "^0.30.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.2"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/LoggeL/jpCore.git"
-  },
-  "author": "Logge",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/LoggeL/jpCore/issues"
-  },
-  "homepage": "https://github.com/LoggeL/jpCore#readme",
-  "overrides": {
-    "tar": "^7.5.10",
-    "qs": "^6.14.2",
-    "@tootallnate/once": "^3.0.1"
-  }
+  "license": "MIT"
 }
