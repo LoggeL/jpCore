@@ -15,6 +15,11 @@ const EnvSchema = z.object({
   SESSION_SECRET: z
     .string()
     .min(32, 'SESSION_SECRET must be at least 32 characters (ideally 32 random bytes base64)'),
+  SESSION_COOKIE_SAMESITE: z.enum(['lax', 'none', 'strict']).optional(),
+  SESSION_COOKIE_SECURE: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((v) => (v == null ? undefined : v === 'true')),
 
   PBKDF2_ITERATIONS: z.coerce.number().int().positive().default(100000),
   PBKDF2_HASH_BYTES: z.coerce.number().int().positive().default(32),
@@ -60,6 +65,11 @@ export const config = {
     cookieName: env.SESSION_COOKIE_NAME,
     ttlMs: env.SESSION_TTL_DAYS * 24 * 60 * 60 * 1000,
     secret: env.SESSION_SECRET,
+    // In prod default to SameSite=None + Secure so cross-site fetches from jp-site work.
+    // In dev default to Lax since the backend serves jp-site from the same origin.
+    cookieSameSite:
+      env.SESSION_COOKIE_SAMESITE ?? (env.NODE_ENV === 'production' ? 'none' : 'lax'),
+    cookieSecure: env.SESSION_COOKIE_SECURE ?? env.NODE_ENV === 'production',
   },
   pbkdf2: {
     iterations: env.PBKDF2_ITERATIONS,
