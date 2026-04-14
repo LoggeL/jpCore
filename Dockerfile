@@ -9,8 +9,6 @@ RUN npm install
 
 COPY . .
 
-RUN mkdir -p /data && ln -sf /data/data.sqlite /app/data.sqlite
-
 EXPOSE 3000
 
-CMD ["node", "index.js"]
+CMD ["sh", "-c", "mkdir -p /data && ln -sf /data/data.sqlite /app/data.sqlite && node index.js"]
