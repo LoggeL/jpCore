@@ -147,6 +147,17 @@ export const registration = sqliteTable(
   ]
 );
 
+export const mailDraft = sqliteTable('mail_draft', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name').notNull(),
+  subject: text('subject').notNull(),
+  html: text('html').notNull(),
+  createdAt: integer('created_at').notNull().default(unixMsNow),
+  updatedAt: integer('updated_at').notNull().default(unixMsNow),
+  lastSentAt: integer('last_sent_at'),
+  lastSentTo: integer('last_sent_to'),
+});
+
 // Relations
 export const accountRelations = relations(account, ({ many }) => ({
   roles: many(role),
@@ -198,3 +209,5 @@ export type Session = typeof session.$inferSelect;
 export type Item = typeof item.$inferSelect;
 export type Volunteer = typeof volunteer.$inferSelect;
 export type Registration = typeof registration.$inferSelect;
+export type MailDraft = typeof mailDraft.$inferSelect;
+export type NewMailDraft = typeof mailDraft.$inferInsert;

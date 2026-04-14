@@ -1,11 +1,13 @@
 import { config } from './config.js';
 import { buildApp } from './app.js';
 import { runMigrations, closeDb } from './db/client.js';
+import { seedMailDrafts } from './db/seed.js';
 import { logger } from './services/logger.js';
 import { startBackupJobs } from './services/backup.js';
 
 async function main(): Promise<void> {
   runMigrations();
+  seedMailDrafts();
 
   const app = await buildApp();
 
