@@ -9,7 +9,7 @@ RUN npm install
 
 COPY . .
 
-RUN mkdir -p /app/data && ln -sf /app/data/data.sqlite /app/data.sqlite
+RUN mkdir -p /data && ln -sf /data/data.sqlite /app/data.sqlite
 
 EXPOSE 3000
 
