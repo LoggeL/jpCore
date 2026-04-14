@@ -72,8 +72,14 @@ module.exports = (app, db) => {
       if (!result) return res.status(403).json({ error: 'Unbekannte E-Mail' })
       if (!result.verifiedMail) return res.status(403).json({ error: 'Email nicht verifiziert' })
 
-      const valid = await verifyPassword(password, result.salt, result.hash)
+      const { valid, legacy } = await verifyPassword(password, result.salt, result.hash)
       if (!valid) return res.status(403).json({ error: 'Falsches Passwort' })
+
+      // Migrate legacy (1000-iteration) hashes to current iteration count transparently
+      if (legacy) {
+        const { salt, hash } = await hashPassword(password)
+        await db('account').where('id', result.id).update({ salt, hash })
+      }
 
       const token = signToken({
         id: result.id,
