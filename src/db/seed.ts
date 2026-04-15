@@ -55,7 +55,7 @@ const TEASER_HTML = wrap(`
     </p>
 
     ${postit(`
-      <p style="margin:0;font-size:17px;color:${PENCIL};"><strong>📅 Wann?</strong> Samstag, <strong>04. Juli 2026</strong>, ab 16:00 Uhr</p>
+      <p style="margin:0;font-size:17px;color:${PENCIL};"><strong>📅 Wann?</strong> Samstag, <strong>27. Juni 2026</strong>, ab 16:00 Uhr</p>
       <p style="margin:6px 0 0;font-size:17px;color:${PENCIL};"><strong>📍 Wo?</strong> Kolpingwiese Ramsen, Klosterhof 7</p>
       <p style="margin:6px 0 0;font-size:15px;color:#777;">(Wetter ist optional. Laune ist Pflicht.)</p>
     `)}

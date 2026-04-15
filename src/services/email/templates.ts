@@ -54,7 +54,7 @@ export const templates = {
           <p style="margin:0;font-size:20px;color:#2d5da1;font-weight:bold;">${data.itemName}</p>
         `)}
         ${postit(`
-          <p style="margin:0;font-size:15px;color:#2d2d2d;">📅 <strong>Wann:</strong> Samstag, 04. Juli 2026</p>
+          <p style="margin:0;font-size:15px;color:#2d2d2d;">📅 <strong>Wann:</strong> Samstag, 27. Juni 2026</p>
           <p style="margin:4px 0 0;font-size:15px;color:#2d2d2d;">📍 <strong>Wo:</strong> Kolpingwiese Ramsen</p>
         `)}
         <p style="font-size:16px;color:#2d2d2d;margin-top:20px;">Bis bald im Wasser! 🏊‍♂️💦</p>
