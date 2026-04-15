@@ -45,7 +45,11 @@ export async function buildApp(): Promise<FastifyInstance> {
   });
 
   if (config.corsOrigins.length > 0) {
-    await app.register(cors, { origin: config.corsOrigins, credentials: true });
+    await app.register(cors, {
+      origin: config.corsOrigins,
+      credentials: true,
+      methods: ['GET', 'HEAD', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+    });
   }
 
   // Dev static serving: mount jp-site at / so cookies are single-origin.
