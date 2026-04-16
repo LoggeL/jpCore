@@ -158,6 +158,21 @@ export const mailDraft = sqliteTable('mail_draft', {
   lastSentTo: integer('last_sent_to'),
 });
 
+export const auditLog = sqliteTable(
+  'audit_log',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    accountId: integer('account_id').references(() => account.id, { onDelete: 'set null' }),
+    eventType: text('event_type').notNull(),
+    message: text('message').notNull(),
+    meta: text('meta'),
+    ipAddress: text('ip_address'),
+    userAgent: text('user_agent'),
+    createdAt: integer('created_at').notNull().default(unixMsNow),
+  },
+  (t) => [index('audit_log_created_idx').on(t.createdAt), index('audit_log_account_idx').on(t.accountId)]
+);
+
 // Relations
 export const accountRelations = relations(account, ({ many }) => ({
   roles: many(role),
@@ -211,3 +226,5 @@ export type Volunteer = typeof volunteer.$inferSelect;
 export type Registration = typeof registration.$inferSelect;
 export type MailDraft = typeof mailDraft.$inferSelect;
 export type NewMailDraft = typeof mailDraft.$inferInsert;
+export type AuditLog = typeof auditLog.$inferSelect;
+export type NewAuditLog = typeof auditLog.$inferInsert;

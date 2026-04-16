@@ -11,6 +11,7 @@ import {
 import { setSessionCookie, clearSessionCookie } from '../../lib/cookies.js';
 import { LoginBody, MeReply, OkReply } from '../../schemas/auth.js';
 import { config } from '../../config.js';
+import { writeAuditLog } from '../../lib/audit.js';
 
 const { account } = schema;
 
@@ -86,6 +87,14 @@ export const loginRoutes: FastifyPluginAsyncZod = async (app) => {
         accountId: row.id,
         userAgent: req.headers['user-agent'] ?? null,
         ipAddress: req.ip,
+      });
+
+      writeAuditLog({
+        accountId: row.id,
+        eventType: 'login',
+        message: `${row.name} logged in`,
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'] ?? null,
       });
 
       setSessionCookie(reply, active.token, active.expiresAt);

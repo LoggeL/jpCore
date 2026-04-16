@@ -97,6 +97,19 @@ export const AdminVolunteerList = z.array(
   })
 );
 
+export const AdminAuditLogList = z.array(
+  z.object({
+    id: z.number().int(),
+    accountId: z.number().int().nullable(),
+    eventType: z.string(),
+    message: z.string(),
+    meta: z.string().nullable(),
+    ipAddress: z.string().nullable(),
+    userAgent: z.string().nullable(),
+    createdAt: z.number().int(),
+  })
+);
+
 export const AdminCreateItemBody = z.object({ name: z.string().trim().min(1).max(200) });
 
 export const IdParam = z.object({ id: z.coerce.number().int().positive() });

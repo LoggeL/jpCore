@@ -8,6 +8,7 @@ import { AuthError } from '../../lib/errors.js';
 import { sendMail } from '../../services/email/send.js';
 import { templates } from '../../services/email/templates.js';
 import { config } from '../../config.js';
+import { writeAuditLog } from '../../lib/audit.js';
 import {
   SendPasswordResetBody,
   ResetPasswordBody,
@@ -58,6 +59,14 @@ export const passwordResetRoutes: FastifyPluginAsyncZod = async (app) => {
 
       const url = `${config.host}/reset-password.html?token=${encodeURIComponent(token)}`;
       await sendMail(email, templates.passwordReset({ url }));
+
+      writeAuditLog({
+        accountId: row.id,
+        eventType: 'password_reset_requested',
+        message: `${row.name} requested mail reset`,
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'] ?? null,
+      });
 
       return { ok: true as const };
     }
@@ -114,6 +123,20 @@ export const passwordResetRoutes: FastifyPluginAsyncZod = async (app) => {
 
       // Invalidate all existing sessions — password was just changed.
       deleteAllSessionsForAccount(row.accountId);
+
+      const acc = db
+        .select({ name: account.name })
+        .from(account)
+        .where(eq(account.id, row.accountId))
+        .get();
+
+      writeAuditLog({
+        accountId: row.accountId,
+        eventType: 'password_reset_completed',
+        message: `${acc?.name ?? `Account ${row.accountId}`} reset mail`,
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'] ?? null,
+      });
 
       return { ok: true as const };
     }
