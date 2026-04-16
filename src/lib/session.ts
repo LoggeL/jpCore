@@ -91,10 +91,24 @@ export function findSessionByToken(token: string): ActiveSession | null {
 export function touchSession(sessionId: string): void {
   const now = Date.now();
   const expiresAt = now + config.session.ttlMs;
+
+  const row = db
+    .select({ accountId: session.accountId })
+    .from(session)
+    .where(eq(session.id, sessionId))
+    .get();
+
   db.update(session)
     .set({ lastUsedAt: now, expiresAt })
     .where(eq(session.id, sessionId))
     .run();
+
+  if (row) {
+    db.update(account)
+      .set({ lastActivityAt: now, updatedAt: now })
+      .where(eq(account.id, row.accountId))
+      .run();
+  }
 }
 
 export function deleteSession(sessionId: string): void {
