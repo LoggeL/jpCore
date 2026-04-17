@@ -8,9 +8,7 @@ import {
   deleteSession,
   findSessionByToken,
 } from '../../lib/session.js';
-import { setSessionCookie, clearSessionCookie } from '../../lib/cookies.js';
 import { LoginBody, LoginReply, OkReply } from '../../schemas/auth.js';
-import { config } from '../../config.js';
 import { writeAuditLog } from '../../lib/audit.js';
 
 const { account } = schema;
@@ -97,8 +95,6 @@ export const loginRoutes: FastifyPluginAsyncZod = async (app) => {
         userAgent: req.headers['user-agent'] ?? null,
       });
 
-      setSessionCookie(reply, active.token, active.expiresAt);
-
       return {
         ...active.account,
         sessionToken: active.token,
@@ -112,15 +108,13 @@ export const loginRoutes: FastifyPluginAsyncZod = async (app) => {
     {
       schema: { response: { 200: OkReply } },
     },
-    async (req, reply) => {
+    async (req) => {
       const authHeader = req.headers.authorization;
-      const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice('Bearer '.length).trim() : null;
-      const token = bearerToken || (req.cookies as Record<string, string | undefined>)?.[config.session.cookieName];
+      const token = authHeader?.startsWith('Bearer ') ? authHeader.slice('Bearer '.length).trim() : null;
       if (token) {
         const active = findSessionByToken(token);
         if (active) deleteSession(active.id);
       }
-      clearSessionCookie(reply);
       return { ok: true as const };
     }
   );

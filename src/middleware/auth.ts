@@ -1,7 +1,6 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { findSessionByToken, type SessionAccount } from '../lib/session.js';
 import { AuthError, ForbiddenError } from '../lib/errors.js';
-import { config } from '../config.js';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -16,10 +15,6 @@ function extractSessionToken(req: FastifyRequest): string | null {
     const token = authHeader.slice('Bearer '.length).trim();
     if (token) return token;
   }
-
-  const cookies = req.cookies as Record<string, string | undefined> | undefined;
-  const fromCookie = cookies?.[config.session.cookieName];
-  if (fromCookie) return fromCookie;
   return null;
 }
 
