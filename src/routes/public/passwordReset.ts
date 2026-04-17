@@ -22,7 +22,7 @@ export const passwordResetRoutes: FastifyPluginAsyncZod = async (app) => {
   app.get('/reset-password.html', async (req, reply) => {
     const token = (req.query as { token?: string })?.token;
     const qs = token ? `?token=${encodeURIComponent(token)}` : '';
-    return reply.redirect(`${config.host}/reset-password.html${qs}`);
+    return reply.redirect(`${config.publicAppUrl}/reset-password.html${qs}`);
   });
 
   app.post(
@@ -63,7 +63,7 @@ export const passwordResetRoutes: FastifyPluginAsyncZod = async (app) => {
         })
         .run();
 
-      const url = `${config.host}/reset-password.html?token=${encodeURIComponent(token)}`;
+      const url = `${config.publicAppUrl}/reset-password.html?token=${encodeURIComponent(token)}`;
       await sendMail(email, templates.passwordReset({ url }));
 
       writeAuditLog({

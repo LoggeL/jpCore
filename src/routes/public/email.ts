@@ -12,7 +12,7 @@ export const emailRoutes: FastifyPluginAsyncZod = async (app) => {
   app.get('/verify-email.html', async (req, reply) => {
     const token = (req.query as { token?: string })?.token;
     const qs = token ? `?token=${encodeURIComponent(token)}` : '';
-    return reply.redirect(`${config.host}/verify-email.html${qs}`);
+    return reply.redirect(`${config.publicAppUrl}/verify-email.html${qs}`);
   });
 
   app.post(

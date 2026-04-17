@@ -98,7 +98,7 @@ export const accountAdminRoutes: FastifyPluginAsyncZod = async (app) => {
           .run();
       });
 
-      const url = `${config.host}/verify-email.html?token=${encodeURIComponent(verificationToken)}`;
+      const url = `${config.publicAppUrl}/verify-email.html?token=${encodeURIComponent(verificationToken)}`;
       await sendMail(email, templates.emailVerification({ name, url }));
 
       return { ok: true as const };
