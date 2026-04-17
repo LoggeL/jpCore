@@ -19,6 +19,12 @@ const { account, passwordResetToken } = schema;
 const RESET_TTL_MS = 60 * 60 * 1000; // 1 hour
 
 export const passwordResetRoutes: FastifyPluginAsyncZod = async (app) => {
+  app.get('/reset-password.html', async (req, reply) => {
+    const token = (req.query as { token?: string })?.token;
+    const qs = token ? `?token=${encodeURIComponent(token)}` : '';
+    return reply.redirect(`${config.host}/reset-password.html${qs}`);
+  });
+
   app.post(
     '/sendPasswordReset',
     {
