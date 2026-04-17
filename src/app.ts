@@ -61,6 +61,18 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   app.get('/api/health', async () => ({ status: 'ok', ts: Date.now() }));
 
+  app.get('/reset-password.html', async (req, reply) => {
+    const token = (req.query as { token?: string })?.token;
+    const qs = token ? `?token=${encodeURIComponent(token)}` : '';
+    return reply.redirect(`${config.publicAppUrl}/reset-password.html${qs}`);
+  });
+
+  app.get('/verify-email.html', async (req, reply) => {
+    const token = (req.query as { token?: string })?.token;
+    const qs = token ? `?token=${encodeURIComponent(token)}` : '';
+    return reply.redirect(`${config.publicAppUrl}/verify-email.html${qs}`);
+  });
+
   await app.register(registerPublicRoutes, { prefix: '/api/public' });
   await app.register(registerPrivateRoutes, { prefix: '/api/private' });
   await app.register(registerAdminRoutes, { prefix: '/api/admin' });
