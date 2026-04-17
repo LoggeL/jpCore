@@ -9,7 +9,7 @@ import {
   findSessionByToken,
 } from '../../lib/session.js';
 import { setSessionCookie, clearSessionCookie } from '../../lib/cookies.js';
-import { LoginBody, MeReply, OkReply } from '../../schemas/auth.js';
+import { LoginBody, LoginReply, OkReply } from '../../schemas/auth.js';
 import { config } from '../../config.js';
 import { writeAuditLog } from '../../lib/audit.js';
 
@@ -21,7 +21,7 @@ export const loginRoutes: FastifyPluginAsyncZod = async (app) => {
     {
       schema: {
         body: LoginBody,
-        response: { 200: MeReply },
+        response: { 200: LoginReply },
       },
       config: {
         rateLimit: {
@@ -99,7 +99,11 @@ export const loginRoutes: FastifyPluginAsyncZod = async (app) => {
 
       setSessionCookie(reply, active.token, active.expiresAt);
 
-      return active.account;
+      return {
+        ...active.account,
+        sessionToken: active.token,
+        expiresAt: active.expiresAt,
+      };
     }
   );
 
@@ -109,7 +113,9 @@ export const loginRoutes: FastifyPluginAsyncZod = async (app) => {
       schema: { response: { 200: OkReply } },
     },
     async (req, reply) => {
-      const token = (req.cookies as Record<string, string | undefined>)?.[config.session.cookieName];
+      const authHeader = req.headers.authorization;
+      const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice('Bearer '.length).trim() : null;
+      const token = bearerToken || (req.cookies as Record<string, string | undefined>)?.[config.session.cookieName];
       if (token) {
         const active = findSessionByToken(token);
         if (active) deleteSession(active.id);

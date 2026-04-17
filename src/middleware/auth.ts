@@ -11,6 +11,12 @@ declare module 'fastify' {
 }
 
 function extractSessionToken(req: FastifyRequest): string | null {
+  const authHeader = req.headers.authorization;
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = authHeader.slice('Bearer '.length).trim();
+    if (token) return token;
+  }
+
   const cookies = req.cookies as Record<string, string | undefined> | undefined;
   const fromCookie = cookies?.[config.session.cookieName];
   if (fromCookie) return fromCookie;

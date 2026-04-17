@@ -49,4 +49,10 @@ export const MeReply = z.object({
 });
 export type MeReply = z.infer<typeof MeReply>;
 
+export const LoginReply = MeReply.extend({
+  sessionToken: z.string(),
+  expiresAt: z.number().int(),
+});
+export type LoginReply = z.infer<typeof LoginReply>;
+
 export const OkReply = z.object({ ok: z.literal(true) });
