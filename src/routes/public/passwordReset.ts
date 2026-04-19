@@ -9,6 +9,7 @@ import { sendMail } from '../../services/email/send.js';
 import { templates } from '../../services/email/templates.js';
 import { config } from '../../config.js';
 import { writeAuditLog } from '../../lib/audit.js';
+import { getRealIp } from '../../lib/request-ip.js';
 import {
   SendPasswordResetBody,
   ResetPasswordBody,
@@ -42,6 +43,7 @@ export const passwordResetRoutes: FastifyPluginAsyncZod = async (app) => {
     },
     async (req) => {
       const { email } = req.body;
+      const realIp = getRealIp(req);
 
       const row = db
         .select({ id: account.id, name: account.name })
@@ -70,7 +72,7 @@ export const passwordResetRoutes: FastifyPluginAsyncZod = async (app) => {
         accountId: row.id,
         eventType: 'password_reset_requested',
         message: `${row.name} requested mail reset`,
-        ipAddress: req.ip,
+        ipAddress: realIp,
         userAgent: req.headers['user-agent'] ?? null,
       });
 
@@ -95,6 +97,7 @@ export const passwordResetRoutes: FastifyPluginAsyncZod = async (app) => {
     },
     async (req) => {
       const { token, password } = req.body;
+      const realIp = getRealIp(req);
       const tokenHash = hashToken(token);
 
       const row = db
@@ -140,7 +143,7 @@ export const passwordResetRoutes: FastifyPluginAsyncZod = async (app) => {
         accountId: row.accountId,
         eventType: 'password_reset_completed',
         message: `${acc?.name ?? `Account ${row.accountId}`} reset mail`,
-        ipAddress: req.ip,
+        ipAddress: realIp,
         userAgent: req.headers['user-agent'] ?? null,
       });
 

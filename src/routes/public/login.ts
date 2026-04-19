@@ -10,6 +10,7 @@ import {
 } from '../../lib/session.js';
 import { LoginBody, LoginReply, OkReply } from '../../schemas/auth.js';
 import { writeAuditLog } from '../../lib/audit.js';
+import { getRealIp } from '../../lib/request-ip.js';
 
 const { account } = schema;
 
@@ -81,17 +82,18 @@ export const loginRoutes: FastifyPluginAsyncZod = async (app) => {
           .run();
       }
 
+      const realIp = getRealIp(req);
       const active = createSession({
         accountId: row.id,
         userAgent: req.headers['user-agent'] ?? null,
-        ipAddress: req.ip,
+        ipAddress: realIp,
       });
 
       writeAuditLog({
         accountId: row.id,
         eventType: 'login',
         message: `${row.name} logged in`,
-        ipAddress: req.ip,
+        ipAddress: realIp,
         userAgent: req.headers['user-agent'] ?? null,
       });
 
