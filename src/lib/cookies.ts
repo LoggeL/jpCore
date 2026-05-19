@@ -2,12 +2,15 @@ import type { FastifyReply } from 'fastify';
 import { config } from '../config.js';
 
 export function setSessionCookie(reply: FastifyReply, token: string, expiresAt: number): void {
+  const maxAgeSeconds = Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
+
   reply.setCookie(config.session.cookieName, token, {
     httpOnly: true,
     secure: config.session.cookieSecure,
     sameSite: config.session.cookieSameSite,
     path: '/',
     expires: new Date(expiresAt),
+    maxAge: maxAgeSeconds,
   });
 }
 

@@ -12,7 +12,7 @@ const EnvSchema = z.object({
   DATABASE_PATH: z.string().default('./data.sqlite'),
 
   SESSION_COOKIE_NAME: z.string().default('jpcore_session'),
-  SESSION_TTL_DAYS: z.coerce.number().int().positive().default(14),
+  SESSION_TTL_DAYS: z.coerce.number().int().positive().default(90),
   SESSION_SECRET: z
     .string()
     .min(32, 'SESSION_SECRET must be at least 32 characters (ideally 32 random bytes base64)'),

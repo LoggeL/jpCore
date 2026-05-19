@@ -54,10 +54,10 @@ tests/
 
 **Opaque session tokens in `HttpOnly` cookies** — no JWTs.
 
-- Cookie: `jpcore_session`, `HttpOnly`, `SameSite=Lax`, `Secure` in production, sliding 14-day TTL
+- Cookie: `jpcore_session`, `HttpOnly`, `SameSite=Lax`, `Secure` in production, sliding 90-day TTL
 - Storage: `session` table with `sha256(token)` only — a DB leak doesn't yield live sessions
 - Roles: fetched from the `role` table on every request (no stale-role problem; role changes take effect immediately)
-- `lastActivityAt` bump is asynchronous (`queueMicrotask`) so auth never blocks on a DB write
+- `lastActivityAt` and `expiresAt` are refreshed on authenticated requests so the DB row and cookie expiry stay aligned
 - Password reset: dedicated `password_reset_token` table, 1-hour TTL, single-use, all sessions invalidated on consume
 - Email verification: dedicated `email_verification_token` table, 24-hour TTL
 - Rate limiting: 20 logins / IP / 15 min, 10 reset requests / IP / hour

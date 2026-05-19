@@ -8,6 +8,8 @@ import {
   deleteSession,
   findSessionByToken,
 } from '../../lib/session.js';
+import { clearSessionCookie, setSessionCookie } from '../../lib/cookies.js';
+import { config } from '../../config.js';
 import { LoginBody, LoginReply, OkReply } from '../../schemas/auth.js';
 import { writeAuditLog } from '../../lib/audit.js';
 import { getRealIp } from '../../lib/request-ip.js';
@@ -88,6 +90,7 @@ export const loginRoutes: FastifyPluginAsyncZod = async (app) => {
         userAgent: req.headers['user-agent'] ?? null,
         ipAddress: realIp,
       });
+      setSessionCookie(reply, active.token, active.expiresAt);
 
       writeAuditLog({
         accountId: row.id,
@@ -110,13 +113,18 @@ export const loginRoutes: FastifyPluginAsyncZod = async (app) => {
     {
       schema: { response: { 200: OkReply } },
     },
-    async (req) => {
+    async (req, reply) => {
       const authHeader = req.headers.authorization;
-      const token = authHeader?.startsWith('Bearer ') ? authHeader.slice('Bearer '.length).trim() : null;
-      if (token) {
+      const tokens = [
+        authHeader?.startsWith('Bearer ') ? authHeader.slice('Bearer '.length).trim() : null,
+        req.cookies?.[config.session.cookieName],
+      ].filter((token): token is string => typeof token === 'string' && token.length > 0);
+
+      for (const token of new Set(tokens)) {
         const active = findSessionByToken(token);
         if (active) deleteSession(active.id);
       }
+      clearSessionCookie(reply);
       return { ok: true as const };
     }
   );

@@ -1,4 +1,4 @@
-import { eq, lt } from 'drizzle-orm';
+import { and, eq, lt, ne } from 'drizzle-orm';
 import { db, schema } from '../db/client.js';
 import { generateToken, hashToken, newId } from './tokens.js';
 import { config } from '../config.js';
@@ -82,13 +82,12 @@ export function findSessionByToken(token: string): ActiveSession | null {
   const acc = loadAccountForSession(row.accountId);
   if (!acc) return null;
 
-  // Fire-and-forget sliding-window bump. Never awaited — auth stays non-blocking.
-  queueMicrotask(() => touchSession(row.id));
+  const expiresAt = touchSession(row.id);
 
-  return { id: row.id, token, expiresAt: row.expiresAt, account: acc };
+  return { id: row.id, token, expiresAt, account: acc };
 }
 
-export function touchSession(sessionId: string): void {
+export function touchSession(sessionId: string): number {
   const now = Date.now();
   const expiresAt = now + config.session.ttlMs;
 
@@ -109,6 +108,8 @@ export function touchSession(sessionId: string): void {
       .where(eq(account.id, row.accountId))
       .run();
   }
+
+  return expiresAt;
 }
 
 export function deleteSession(sessionId: string): void {
@@ -117,6 +118,14 @@ export function deleteSession(sessionId: string): void {
 
 export function deleteAllSessionsForAccount(accountId: number): number {
   const result = db.delete(session).where(eq(session.accountId, accountId)).run();
+  return result.changes;
+}
+
+export function deleteOtherSessionsForAccount(accountId: number, sessionId: string): number {
+  const result = db
+    .delete(session)
+    .where(and(eq(session.accountId, accountId), ne(session.id, sessionId)))
+    .run();
   return result.changes;
 }
 

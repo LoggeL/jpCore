@@ -5,8 +5,10 @@ import { hashPassword, verifyPassword } from '../../lib/password.js';
 import { AuthError } from '../../lib/errors.js';
 import {
   deleteAllSessionsForAccount,
+  deleteOtherSessionsForAccount,
   deleteSession,
 } from '../../lib/session.js';
+import { clearSessionCookie } from '../../lib/cookies.js';
 import { requireUser } from '../../middleware/auth.js';
 import { MeReply, ChangePasswordBody, OkReply } from '../../schemas/auth.js';
 
@@ -30,8 +32,9 @@ export const meRoutes: FastifyPluginAsyncZod = async (app) => {
       preHandler: [requireUser],
       schema: { response: { 200: OkReply } },
     },
-    async (req) => {
+    async (req, reply) => {
       deleteAllSessionsForAccount(req.user!.id);
+      clearSessionCookie(reply);
       return { ok: true as const };
     }
   );
@@ -42,7 +45,7 @@ export const meRoutes: FastifyPluginAsyncZod = async (app) => {
       preHandler: [requireUser],
       schema: { body: ChangePasswordBody, response: { 200: OkReply } },
     },
-    async (req) => {
+    async (req, reply) => {
       const { currentPassword, newPassword } = req.body;
       const accountId = req.user!.id;
 
@@ -78,15 +81,13 @@ export const meRoutes: FastifyPluginAsyncZod = async (app) => {
         .where(eq(account.id, accountId))
         .run();
 
-      // Kill all other sessions; keep the current one alive so the user stays signed in.
       const currentSessionId = req.sessionId;
-      deleteAllSessionsForAccount(accountId);
-      // NB: deleteAllSessionsForAccount also kills the current one. Re-create a fresh
-      // session for this request would be cleaner, but simplest for now is: client must
-      // re-authenticate after a password change. Spec-wise this is correct and matches
-      // common apps. (The alternative — skipping the current session — leaves a dangling
-      // session tied to a now-invalid password, which is the thing we just fixed.)
-      void currentSessionId;
+      if (currentSessionId) {
+        deleteOtherSessionsForAccount(accountId, currentSessionId);
+      } else {
+        deleteAllSessionsForAccount(accountId);
+        clearSessionCookie(reply);
+      }
 
       return { ok: true as const };
     }
@@ -98,8 +99,9 @@ export const meRoutes: FastifyPluginAsyncZod = async (app) => {
       preHandler: [requireUser],
       schema: { response: { 200: OkReply } },
     },
-    async (req) => {
+    async (req, reply) => {
       if (req.sessionId) deleteSession(req.sessionId);
+      clearSessionCookie(reply);
       return { ok: true as const };
     }
   );
