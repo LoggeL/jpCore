@@ -1,10 +1,11 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
-import { eq } from 'drizzle-orm';
+import { eq, isNotNull } from 'drizzle-orm';
 import { db, schema } from '../../db/client.js';
-import { requireAdmin } from '../../middleware/auth.js';
+import { requireAdmin, requireAdminOrDj } from '../../middleware/auth.js';
 import { NotFoundError } from '../../lib/errors.js';
 import {
   AdminRegistrationList,
+  AdminMusicRequestList,
   AdminItemList,
   AdminVolunteerList,
   AdminCreateItemBody,
@@ -15,6 +16,28 @@ import {
 const { account, item, registration, volunteer } = schema;
 
 export const poolpartyAdminRoutes: FastifyPluginAsyncZod = async (app) => {
+  app.get(
+    '/music',
+    {
+      preHandler: [requireAdminOrDj],
+      schema: { response: { 200: AdminMusicRequestList } },
+    },
+    async () => {
+      return db
+        .select({
+          id: registration.id,
+          accountName: account.name,
+          music: registration.music,
+          updatedAt: registration.updatedAt,
+        })
+        .from(registration)
+        .leftJoin(account, eq(account.id, registration.accountId))
+        .where(isNotNull(registration.music))
+        .all()
+        .filter((row): row is typeof row & { music: string } => !!row.music?.trim());
+    }
+  );
+
   app.get(
     '/registration',
     {

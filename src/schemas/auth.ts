@@ -36,7 +36,7 @@ export const AdminRegisterBody = z.object({
   name: NameInput,
   email: EmailInput,
   password: PasswordInput.optional(),
-  roles: z.array(z.enum(['admin', 'user'])).min(1).default(['user']),
+  roles: z.array(z.enum(['admin', 'user', 'dj'])).min(1).default(['user']),
 });
 export type AdminRegisterBody = z.infer<typeof AdminRegisterBody>;
 

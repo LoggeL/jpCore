@@ -57,6 +57,9 @@ tests/
 - Cookie: `jpcore_session`, `HttpOnly`, `SameSite=Lax`, `Secure` in production, sliding 90-day TTL
 - Storage: `session` table with `sha256(token)` only — a DB leak doesn't yield live sessions
 - Roles: fetched from the `role` table on every request (no stale-role problem; role changes take effect immediately)
+  - `admin`: full admin access
+  - `dj`: admin panel access limited to song requests
+  - `user`: regular attendee access
 - `lastActivityAt` and `expiresAt` are refreshed on authenticated requests so the DB row and cookie expiry stay aligned
 - Password reset: dedicated `password_reset_token` table, 1-hour TTL, single-use, all sessions invalidated on consume
 - Email verification: dedicated `email_verification_token` table, 24-hour TTL
@@ -98,13 +101,14 @@ When a legacy hash verifies successfully, the next login transparently re-hashes
 | `POST/PATCH/DELETE` | `/api/private/poolparty/registration` |
 | `POST/DELETE` | `/api/private/poolparty/volunteer` |
 
-### Admin (`requireAdmin` preHandler)
+### Admin (`requireAdmin` preHandler unless noted)
 
 | Method | Path |
 |---|---|
 | `POST` | `/api/admin/register` |
 | `DELETE` | `/api/admin/register/:id` |
 | `GET` | `/api/admin/poolparty/account` |
+| `GET` | `/api/admin/poolparty/music` | `admin` or `dj` |
 | `GET` | `/api/admin/poolparty/registration` |
 | `GET` | `/api/admin/poolparty/item` |
 | `GET` | `/api/admin/poolparty/volunteer` |
@@ -118,7 +122,7 @@ When a legacy hash verifies successfully, the next login transparently re-hashes
 8 tables managed by Drizzle (`src/db/schema.ts`):
 
 - `account` — id, name, email (unique), email_verified_at, password_hash, password_algo, password_salt, created_at, updated_at, last_activity_at
-- `role` — accountId + name (`'admin' | 'user'`), unique on `(accountId, name)`
+- `role` — accountId + name (`'admin' | 'user' | 'dj'`), unique on `(accountId, name)`
 - `session` — id (uuid), accountId, token_hash, expires_at, last_used_at, user_agent, ip_address
 - `password_reset_token` — accountId, token_hash, expires_at, used_at
 - `email_verification_token` — same shape, longer TTL

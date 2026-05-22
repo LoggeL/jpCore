@@ -36,7 +36,7 @@ export const role = sqliteTable(
     accountId: integer('account_id')
       .notNull()
       .references(() => account.id, { onDelete: 'cascade' }),
-    name: text('name', { enum: ['admin', 'user'] }).notNull(),
+    name: text('name', { enum: ['admin', 'user', 'dj'] }).notNull(),
   },
   (t) => [
     uniqueIndex('role_account_name_unique').on(t.accountId, t.name),

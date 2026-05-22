@@ -47,6 +47,17 @@ export async function requireAdmin(req: FastifyRequest, reply: FastifyReply): Pr
   }
 }
 
+export async function requireAdminOrDj(req: FastifyRequest, reply: FastifyReply): Promise<void> {
+  await requireUser(req, reply);
+  if (!req.user?.roles.some((role) => role === 'admin' || role === 'dj')) {
+    throw new ForbiddenError('Admin or DJ role required');
+  }
+}
+
 export function isAdmin(user: SessionAccount | undefined): boolean {
   return !!user?.roles.includes('admin');
+}
+
+export function isDj(user: SessionAccount | undefined): boolean {
+  return !!user?.roles.includes('dj');
 }

@@ -65,7 +65,7 @@ function parseArgs(): CliOpts {
  *   - '["admin"]'       → ['admin']           (json array of strings)
  *   - '["admin","user"]'→ ['admin','user']
  */
-function parseLegacyRoles(raw: unknown): Array<'admin' | 'user'> {
+function parseLegacyRoles(raw: unknown): Array<'admin' | 'user' | 'dj'> {
   if (raw == null) return [];
   const s = String(raw).trim();
   if (s === '') return [];
@@ -75,13 +75,13 @@ function parseLegacyRoles(raw: unknown): Array<'admin' | 'user'> {
       if (Array.isArray(arr)) {
         return arr
           .map((r) => String(r))
-          .filter((r): r is 'admin' | 'user' => r === 'admin' || r === 'user');
+          .filter((r): r is 'admin' | 'user' | 'dj' => r === 'admin' || r === 'user' || r === 'dj');
       }
     } catch {
       // fall through
     }
   }
-  if (s === 'admin' || s === 'user') return [s];
+  if (s === 'admin' || s === 'user' || s === 'dj') return [s];
   return [];
 }
 

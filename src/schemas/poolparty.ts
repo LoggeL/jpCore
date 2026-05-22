@@ -77,6 +77,15 @@ export const AdminRegistrationList = z.array(
   })
 );
 
+export const AdminMusicRequestList = z.array(
+  z.object({
+    id: z.number().int(),
+    accountName: z.string().nullable(),
+    music: z.string(),
+    updatedAt: z.number().int(),
+  })
+);
+
 export const AdminItemList = z.array(
   z.object({
     id: z.number().int(),
