@@ -59,7 +59,10 @@ export async function buildApp(): Promise<FastifyInstance> {
     logger.info({ root }, 'serving jp-site');
   }
 
-  app.get('/api/health', async () => ({ status: 'ok', ts: Date.now() }));
+  const healthHandler = async () => ({ status: 'ok', ts: Date.now() });
+
+  app.get('/', healthHandler);
+  app.get('/api/health', healthHandler);
 
   app.get('/reset-password.html', async (req, reply) => {
     const token = (req.query as { token?: string })?.token;
