@@ -32,6 +32,11 @@ export const ChangePasswordBody = z.object({
 });
 export type ChangePasswordBody = z.infer<typeof ChangePasswordBody>;
 
+export const ChangeEmailBody = z.object({
+  email: EmailInput,
+});
+export type ChangeEmailBody = z.infer<typeof ChangeEmailBody>;
+
 export const AdminRegisterBody = z.object({
   name: NameInput,
   email: EmailInput,
@@ -39,6 +44,13 @@ export const AdminRegisterBody = z.object({
   roles: z.array(z.enum(['admin', 'user', 'dj'])).min(1).default(['user']),
 });
 export type AdminRegisterBody = z.infer<typeof AdminRegisterBody>;
+
+export const AdminUpdateAccountBody = z.object({
+  name: NameInput.optional(),
+  email: EmailInput.optional(),
+  roles: z.array(z.enum(['admin', 'user', 'dj'])).min(1).optional(),
+});
+export type AdminUpdateAccountBody = z.infer<typeof AdminUpdateAccountBody>;
 
 export const MeReply = z.object({
   id: z.number().int(),

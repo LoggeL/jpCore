@@ -8,7 +8,7 @@ import { ConflictError } from '../../lib/errors.js';
 import { sendMail } from '../../services/email/send.js';
 import { templates } from '../../services/email/templates.js';
 import { config } from '../../config.js';
-import { AdminRegisterBody, OkReply } from '../../schemas/auth.js';
+import { AdminRegisterBody, AdminUpdateAccountBody, OkReply } from '../../schemas/auth.js';
 import { AdminAccountList, IdParam } from '../../schemas/poolparty.js';
 
 const { account, role, emailVerificationToken } = schema;
@@ -100,6 +100,48 @@ export const accountAdminRoutes: FastifyPluginAsyncZod = async (app) => {
 
       const url = `${config.publicAppUrl}/verify-email.html?token=${encodeURIComponent(verificationToken)}`;
       await sendMail(email, templates.emailVerification({ name, url }));
+
+      return { ok: true as const };
+    }
+  );
+
+  app.patch(
+    '/poolparty/account/:id',
+    {
+      preHandler: [requireAdmin],
+      schema: { params: IdParam, body: AdminUpdateAccountBody, response: { 200: OkReply } },
+    },
+    async (req) => {
+      const { id } = req.params;
+      const { name, email, roles } = req.body;
+
+      const target = db.select({ id: account.id }).from(account).where(eq(account.id, id)).get();
+      if (!target) throw new ConflictError('Account not found', 'account_not_found');
+
+      if (email) {
+        const existing = db.select({ id: account.id }).from(account).where(eq(account.email, email)).get();
+        if (existing && existing.id !== id) {
+          throw new ConflictError('Email address is already in use', 'email_exists');
+        }
+      }
+
+      db.transaction((tx) => {
+        if (name || email) {
+          tx.update(account)
+            .set({
+              ...(name ? { name } : {}),
+              ...(email ? { email, emailVerifiedAt: null } : {}),
+              updatedAt: Date.now(),
+            })
+            .where(eq(account.id, id))
+            .run();
+        }
+
+        if (roles) {
+          tx.delete(role).where(eq(role.accountId, id)).run();
+          for (const r of roles) tx.insert(role).values({ accountId: id, name: r }).run();
+        }
+      });
 
       return { ok: true as const };
     }

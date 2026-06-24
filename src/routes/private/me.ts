@@ -2,7 +2,7 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { eq } from 'drizzle-orm';
 import { db, schema } from '../../db/client.js';
 import { hashPassword, verifyPassword } from '../../lib/password.js';
-import { AuthError } from '../../lib/errors.js';
+import { AuthError, ConflictError } from '../../lib/errors.js';
 import {
   deleteAllSessionsForAccount,
   deleteOtherSessionsForAccount,
@@ -10,7 +10,7 @@ import {
 } from '../../lib/session.js';
 import { clearSessionCookie } from '../../lib/cookies.js';
 import { requireUser } from '../../middleware/auth.js';
-import { MeReply, ChangePasswordBody, OkReply } from '../../schemas/auth.js';
+import { MeReply, ChangeEmailBody, ChangePasswordBody, OkReply } from '../../schemas/auth.js';
 
 const { account } = schema;
 
@@ -36,6 +36,40 @@ export const meRoutes: FastifyPluginAsyncZod = async (app) => {
       deleteAllSessionsForAccount(req.user!.id);
       clearSessionCookie(reply);
       return { ok: true as const };
+    }
+  );
+
+  app.post(
+    '/changeEmail',
+    {
+      preHandler: [requireUser],
+      schema: { body: ChangeEmailBody, response: { 200: MeReply } },
+    },
+    async (req) => {
+      const { email } = req.body;
+      const accountId = req.user!.id;
+
+      if (email === req.user!.email) return req.user!;
+
+      const existing = db
+        .select({ id: account.id })
+        .from(account)
+        .where(eq(account.email, email))
+        .get();
+      if (existing && existing.id !== accountId) {
+        throw new ConflictError('Email address is already in use', 'email_exists');
+      }
+
+      db.update(account)
+        .set({
+          email,
+          emailVerifiedAt: null,
+          updatedAt: Date.now(),
+        })
+        .where(eq(account.id, accountId))
+        .run();
+
+      return { ...req.user!, email, emailVerifiedAt: null };
     }
   );
 
